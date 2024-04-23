@@ -7,10 +7,14 @@
 
 #### Code is for single species at the moment
 
-migrationmap = function(n=1, Species1,SciName, rawpath1, rawpath2=NA, rawpathPhoto,  res = 120, range = 30,
-                        step = 10, fps = 2, col1 = "red", col2 = "blue", pointsize, yaxis,
-                        world = F, minlong = -15, 
-                        minlat = -33, maxlong = 180, maxlat = 70,ggp,dataall,migstatus,credit,impos,grpos,
+migrationmap = function(n=1, 
+                        Species1,SciName, rawpath1, rawpath2=NA, 
+                        rawpathPhoto,  res = 120, range = 30,
+                        step = 10, fps = 2, col1 = "red", col2 = "blue", 
+                        pointsize, yaxis, world = F, 
+                        minlong = -15, minlat = -33, maxlong = 180, maxlat = 70,
+                        ggp,dataall,migstatus,credit,
+                        impos,grpos,
                         credit_color = "black")
 {
   require(tidyverse)
@@ -318,10 +322,14 @@ migrationmap = function(n=1, Species1,SciName, rawpath1, rawpath2=NA, rawpathPho
 }
 
 
-migrationmap2 = function(Species1, Species2, rawpath1, rawpath2, rawpathPhoto1, rawpathPhoto2,  res = 120, 
-                         range = 30, step = 10, fps = 2, col1 = "red", col2 = "blue", pointsize, yaxis,
-                         world = F, minlong = -15, minlat = -33, maxlong = 180, maxlat = 70,ggp,dataall,
-                         migstatus1,migstatus2,credit1,credit2,impos,grpos,credit1_color = "black",credit2_color = "black")
+migrationmap2 = function(Species1, Species2, rawpath1, rawpath2, 
+                         rawpathPhoto1, rawpathPhoto2,  res = 120, range = 30,
+                         step = 10, fps = 2, col1 = "red", col2 = "blue", 
+                         pointsize, yaxis, world = F, 
+                         minlong = -15, minlat = -33, maxlong = 180, maxlat = 70,
+                         ggp,dataall,migstatus1,migstatus2,credit1,credit2,
+                         impos,grpos,
+                         credit1_color = "black",credit2_color = "black")
 {
   require(tidyverse)
   require(rgdal)
@@ -756,10 +764,15 @@ migrationmap2 = function(Species1, Species2, rawpath1, rawpath2, rawpathPhoto1, 
   #ggsave("map_draft_2.png", width=24, height=14.5, units="cm", dpi=600)
 }
 
-migrationmapS = function(n=1, Species1,SciName, rawpath1, rawpath2=NA, rawpathPhoto,  res = 120, range = 30,
-                        step = 10, fps = 2, col1 = "red", col2 = "blue", pointsize, yaxis,
-                        world = F, minlong = -15, namepos = "centre",
-                        minlat = -33, maxlong = 180, maxlat = 70,ggp,credit,impos,grpos,
+migrationmapS = function(n=1, 
+                         Species1,SciName, rawpath1, rawpath2=NA, 
+                         rawpathPhoto,  res = 120, range = 30,
+                        step = 10, fps = 2, col1 = "red", col2 = "blue", 
+                        pointsize, yaxis, world = F, 
+                        minlong = -15, minlat = -33, maxlong = 180, maxlat = 70,
+                        namepos = "centre",
+                        ggp,credit,
+                        impos,grpos, 
                         credit_color = "black")
 {
   require(tidyverse)
@@ -1028,10 +1041,14 @@ migrationmapS = function(n=1, Species1,SciName, rawpath1, rawpath2=NA, rawpathPh
 
 ##### two species without graphs
 
-migrationmap2S = function(Species1, Species2, rawpath1, rawpath2, rawpathPhoto1, rawpathPhoto2,  res = 120, 
-                          range = 30, step = 10, fps = 2, col1 = "red", col2 = "blue", pointsize, yaxis,
-                          world = F, minlong = -15, minlat = -33, maxlong = 180, maxlat = 70,ggp,
-                          credit1,credit2,impos,grpos,credit1_color = "black",credit2_color = "black")
+migrationmap2S = function(Species1, Species2, rawpath1, rawpath2, 
+                          rawpathPhoto1, rawpathPhoto2,  res = 120, range = 30,
+                          step = 10, fps = 2, col1 = "red", col2 = "blue",
+                          pointsize, yaxis, world = F, 
+                          minlong = -15, minlat = -33, maxlong = 180, maxlat = 70,
+                          ggp,credit1,credit2,
+                          impos,grpos,
+                          credit1_color = "black",credit2_color = "black")
 {
   require(tidyverse)
   require(rgdal)
@@ -1304,15 +1321,8 @@ migrationmap2S = function(Species1, Species2, rawpath1, rawpath2, rawpathPhoto1,
 }
 
 
-
-
-
-########################################################################################
 ########################################################################################
 ############### Other colour schemes
-
-
-
 
 worldbasemapgreen = function()
 {
@@ -1426,21 +1436,14 @@ worldbasemapgreen = function()
 }
 
 
-
-
-
-#### Updated migration map function
-#### For image with side panel: Species1 = "India Name of Species", SciName = "Scientific Name" 
-#### rawpathPhoto = "file path of jpeg of bird", yaxis = ylim of inset graph, pointsize = size of the point
-
-#### Removed: see line 109, I have replaced the lapply with a for loop, found it easier to code in both the map     stuff and the graph
-
-#### Code is for single species at the moment
-
-migrationmapgreen = function(n=1, Species1,SciName, rawpath1, rawpath2=NA, rawpathPhoto,  res = 120, range = 30,
-                        step = 10, fps = 2, col1 = "red", col2 = "blue", pointsize, yaxis,
-                        world = F, minlong = -15, 
-                        minlat = -33, maxlong = 180, maxlat = 70,ggp,dataall,migstatus,credit,impos,grpos)
+migrationmapgreen = function(n=1, 
+                             Species1,SciName, rawpath1, rawpath2=NA, 
+                             rawpathPhoto,  res = 120, range = 30,
+                        step = 10, fps = 2, col1 = "red", col2 = "blue", 
+                        pointsize, yaxis, world = F, 
+                        minlong = -15, minlat = -33, maxlong = 180, maxlat = 70,
+                        ggp,dataall,migstatus,credit,
+                        impos,grpos)
 {
   require(tidyverse)
   require(rgdal)
