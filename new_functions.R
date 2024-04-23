@@ -1,79 +1,4 @@
 
-#Raw india data, clean and read. Dataframe is called dat
-#load("D:/Post_NCBS/NCF/migration/ebd_IN_relMar-2020/filtered_ebd.RData")
-
-## Use to create a reporting frequency of individual species for each day in the year
-## Input species name, eg Tytler's Leaf Warbler
-create_freq<-function(Species,data,migstatus)
-  {
-  
-  if (migstatus %in% c("S","W","P"))
-  {
-    temp = data %>%
-      filter(COMMON.NAME == Species) %>%
-      distinct(gridg3)
-    data = temp %>% left_join(data)
-  }
-  
-  if (migstatus == "LM")
-  {
-    temp = data %>%
-      filter(COMMON.NAME == Species) %>%
-      distinct(gridg3,season)
-    data = temp %>% left_join(data)
-  }
-  
-  freq1<-matrix(ncol=3, nrow=365)
-  freq1[,1]<-c(1:365)
-  
-  out<-for (i in freq1[,1]){
-    dat1<-data%>%subset(day == i)  
-    freq1[i,2]<-length(which(dat1$COMMON.NAME == Species))
-    freq1[i,3]<-n_distinct(dat1$group.id)
-  }
-  freq1<-as.data.frame(freq1)
-  colnames(freq1)<-c("day","detected","checklists")
-  
-  #freq2<-matrix(ncol=3, nrow=12)
-  #freq2[,1]<-c(1:12)
-  
-  #out<-for (i in freq2[,1]){
-  #  dat1<-data%>%subset(month == i)  
-  #  freq2[i,2]<-length(which(dat1$COMMON.NAME == Species))
-  #  freq2[i,3]<-n_distinct(dat1$group.id)
-  #}
-  #freq2<-as.data.frame(freq2)
-  #colnames(freq2)<-c("month","detected","checklists")
-  
-  #freq3<-matrix(ncol=3, nrow=53)
-  #freq3[,1]<-c(1:53)
-  
-  #out<-for (i in freq3[,1]){
-  #  dat1<-data%>%subset(week == i)  
-  #  freq3[i,2]<-length(which(dat1$COMMON.NAME == Species))
-  #  freq3[i,3]<-n_distinct(dat1$group.id)
-  #}
-  #freq3<-as.data.frame(freq3)
-  #colnames(freq3)<-c("week","detected","checklists")
-  
-  freq4<-matrix(ncol=3, nrow=27)
-  freq4[,1]<-c(1:27)
-  
-  out<-for (i in freq4[,1]){
-    dat1<-data%>%subset(fort == i)  
-    freq4[i,2]<-length(which(dat1$COMMON.NAME == Species))
-    freq4[i,3]<-n_distinct(dat1$group.id)
-  }
-  freq4<-as.data.frame(freq4)
-  colnames(freq4)<-c("fort","detected","checklists")
-  
-  freq = list(freq1,
-              #freq2,
-              #freq3,
-              freq4)
-  return(freq)
-  }
-
 #### Updated migration map function
 #### For image with side panel: Species1 = "India Name of Species", SciName = "Scientific Name" 
 #### rawpathPhoto = "file path of jpeg of bird", yaxis = ylim of inset graph, pointsize = size of the point
@@ -102,47 +27,25 @@ migrationmap = function(n=1, Species1,SciName, rawpath1, rawpath2=NA, rawpathPho
   freq = create_freq(Species = Species1, data = dataall, migstatus = migstatus)
   
   freq1 = freq[[1]]
-  #freq2 = freq[[2]]
-  #freq3 = freq[[3]]
   freq4 = freq[[2]]
   freq1$checklists[freq1$checklists == 0] = 1
-  #freq2$checklists[freq2$checklists == 0] = 1
-  #freq3$checklists[freq3$checklists == 0] = 1
   freq4$checklists[freq4$checklists == 0] = 1
   freq1$perc = (freq1$detected/freq1$checklists)*100
-  #freq2$perc = (freq2$detected/freq2$checklists)*100
-  #freq3$perc = (freq3$detected/freq3$checklists)*100
   freq4$perc = (freq4$detected/freq4$checklists)*100
   mdays = c(15.5,45.0,74.5,105.0,135.5,166.0,196.5,227.5,258.0,288.5,319.0,349.5)
-  #mweek = rollmean(seq(0,365,7),2)
   mfort = rollmean(seq(0,365,14),2)
-  #freq2$day = mdays
-  #freq3$day = c(mweek,mweek[1]+365)
   freq4$day = c(mfort,mfort[1]+365)
   
   spl1 = smooth.spline(c(freq1$day,(freq1$day+365),(freq1$day+730)),rep(freq1$perc,3),nknots=30)
-  #spl2 = smooth.spline(c(freq2$day,(freq2$day+365),(freq2$day+730)),rep(freq2$perc,3),nknots=30)
-  #spl3 = smooth.spline(c(freq3$day,(freq3$day+365),(freq3$day+730)),rep(freq3$perc,3),nknots=30)
   spl4 = smooth.spline(c(freq4$day,(freq4$day+365),(freq4$day+730)),rep(freq4$perc,3),nknots=30)
   
   spl1a = predict(spl1,366:730)
   spl1a = as.data.frame(spl1a)
   spl1a$y[spl1a$y<0] = 0
-  
-  #spl2a = predict(spl2,366:730)
-  #spl2a = as.data.frame(spl2a)
-  #spl2a$y[spl2a$y<0] = 0
-  
-  #spl3a = predict(spl3,366:730)
-  #spl3a = as.data.frame(spl3a)
-  #spl3a$y[spl3a$y<0] = 0
-  
+
   spl4a = predict(spl4,366:730)
   spl4a = as.data.frame(spl4a)
   spl4a$y[spl4a$y<0] = 0
-  
-  #print(freq[[2]])
-  #print(spl4a)
   
   spl = spl4a
   spl$x = 1:365

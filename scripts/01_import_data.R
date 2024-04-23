@@ -23,8 +23,9 @@ data <- data %>%
   # add NO.SP column
   mutate(NO.SP = n_distinct(COMMON.NAME)) %>% 
   ungroup() %>%
-  # add WEEK & FORT & SEASON columns
-  mutate(WEEK.Y = week(OBSERVATION.DATE),
+  # add more columns
+  mutate(DAY.Y = yday(OBSERVATION.DATE),
+         WEEK.Y = week(OBSERVATION.DATE),
          FORT.Y = ceiling(WEEK/2),
          SEASON = case_when(MONTH %in% 5:8 ~ "Summer",
                             MONTH %in% 9:11 ~ "Autumn",

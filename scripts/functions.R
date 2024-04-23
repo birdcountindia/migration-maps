@@ -1,4 +1,3 @@
-
 # world basemap ---------------------------------------------------------------------
 
 gg_world <- function() {
@@ -44,4 +43,88 @@ gg_world <- function() {
   return(world_gg)
   
 }
+
+
+
+# calculate reporting frequency in India as a whole ---------------------------------
+
+# outputs list
+
+calc_repfreq_IN <- function(data, species, mig_status) {
+  
+  # filter data to only those grids and seasons where species reported
+  data_mig <- data %>%
+    filter(COMMON.NAME == species) %>%
+    { if (migstatus %in% c("S","W","P")){
+      distinct(GRID.G3) 
+    } else if (migstatus == "LM") {
+      distinct(GRID.G3, SEASON)
+    } else {
+      .
+    }} %>% 
+    left_join(data)
+  
+  
+  # daily freq
+  totdays <- tibble(DAY.Y = 1:365)
+  
+  data_freq_day <- map_df(totdays$DAY.Y, ~ {
+    
+    # filtering data for day of interest
+    data_day <- data_mig %>% filter(DAY.Y == .x)
+    
+    # calculate species-detected and total checklists for that day
+    temp1 <- data_day %>% 
+      filter(COMMON.NAME == species) %>% 
+      reframe(DET.DAY = n_distinct(GROUP.ID))
+
+    temp2 <- data_day %>% 
+      reframe(LISTS.DAY = n_distinct(GROUP.ID)) %>% 
+      # denominator cannot be 0
+      mutate(LISTS.DAY = case_when(LISTS.DAY == 0 ~ 1,
+                                  TRUE ~ LISTS.DAY))
+
+    to_return <- tibble(DAY.Y = .x) %>% 
+      bind_cols(temp1, temp2) %>% 
+      mutate(REP.FREQ.DAY = 100*DET.DAY/LISTS.DAY)
+    
+    return(to_return)
+    
+  })
+  
+  
+  # fortnightly freq
+  totforts <- tibble(FORT.Y = 1:27)
+  
+  data_freq_fort <- map_df(totforts$FORT.Y, ~ {
+    
+    # filtering data for day of interest
+    data_fort <- data_mig %>% filter(FORT.Y == .x)
+    
+    # calculate species-detected and total checklists for that day
+    temp1 <- data_fort %>% 
+      filter(COMMON.NAME == species) %>% 
+      reframe(DET.FORT = n_distinct(GROUP.ID))
+    
+    temp2 <- data_fort %>% 
+      reframe(LISTS.FORT = n_distinct(GROUP.ID)) %>% 
+      # denominator cannot be 0
+      mutate(LISTS.FORT = case_when(LISTS.FORT == 0 ~ 1,
+                                  TRUE ~ LISTS.FORT))
+    
+    to_return <- tibble(FORT.Y = .x) %>% 
+      bind_cols(temp1, temp2) %>% 
+      mutate(REP.FREQ.FORT = 100*DET.FORT/LISTS.FORT)
+    
+    return(to_return)
+    
+  })
+  
+  
+  # return both
+  return(list(data_freq_day, data_freq_fort))
+
+}
+
+
 
