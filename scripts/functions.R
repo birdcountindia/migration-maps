@@ -1,6 +1,6 @@
 # world basemap ---------------------------------------------------------------------
 
-gg_world <- function() {
+gg_world <- function(theme = "default") {
   
   require(rnaturalearth)
   require(rnaturalearthdata)
@@ -27,18 +27,30 @@ gg_world <- function() {
     # converting to Robinson projection
     st_transform(crs = "ESRI:54030") %>% 
     # fill colours and line widths
-    mutate(FILL = case_when(NAME == "India" ~ "#ffffff",
-                            TRUE ~ "#e5d8ca"),
-           LINEWIDTH = case_when(NAME == "India" ~ 0.65,
+    { if (theme == "default") {
+      mutate(., FILL = case_when(NAME == "India" ~ "#ffffff",
+                              TRUE ~ "#e5d8ca"))
+    } else if (theme == "green") {
+      mutate(., FILL = case_when(NAME == "India" ~ "#008000",
+                              TRUE ~ "#004d00"))
+    }} %>% 
+    mutate(LINEWIDTH = case_when(NAME == "India" ~ 0.65,
                                  TRUE ~ 0.5))
   
   
   world_gg <- ggplot(world_sf) +
-    geom_sf(aes(fill = FILL, linewidth = LINEWIDTH)) +
+    { if (theme == "default") {
+      geom_sf(aes(fill = FILL, linewidth = LINEWIDTH))
+    } else if (theme == "green") {
+      geom_sf(aes(fill = FILL, linewidth = LINEWIDTH), colour = "black")
+    }} +
     scale_fill_identity() +
     scale_linewidth_identity() + 
     theme_void() +
-    theme(panel.background = element_rect(fill = "#a9d5e0", colour = NA))
+    theme(panel.background = element_rect(
+      colour = NA, 
+      fill = if (theme == "default") "#a9d5e0" else if (theme == "green") "#142952"
+    ))
   
   return(world_gg)
   
