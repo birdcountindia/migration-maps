@@ -2,13 +2,17 @@ library(skimmr)
 library(lubridate)
 library(sf)
 
-# loading main EBD for all else -----------------------------------------------------
+# loading main data -----------------------------------------------------
 
 get_param()
 dir_prefix <- "../ebird-datasets/EBD/"
 maindatapath <- glue("{dir_prefix}ebd_IN_rel{currel_month_lab}-{currel_year}.RData")
 
 load(maindatapath)
+
+
+# SoIB main datasheet
+soib2023 <- read.csv(url("https://github.com/stateofindiasbirds/soib_2023/raw/master/01_analyses_full/results/SoIB_main.csv"))
 
 
 # preparing data --------------------------------------------------------------------
@@ -20,8 +24,6 @@ data <- data %>%
   group_by(GROUP.ID, COMMON.NAME) %>% 
   slice_sample(1) %>% 
   group_by(GROUP.ID) %>% 
-  # add NO.SP column
-  mutate(NO.SP = n_distinct(COMMON.NAME)) %>% 
   ungroup() %>%
   # add more columns
   mutate(DAY.Y = yday(OBSERVATION.DATE),
