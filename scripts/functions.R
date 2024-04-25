@@ -6,6 +6,7 @@ gg_world <- function(theme = "default") {
   require(rnaturalearthdata)
   require(ggplot2)
   require(sf)
+  require(rmapshaper) # to simplify sf
   
   
   world_sf <- ne_countries(type = "countries", 
@@ -26,6 +27,8 @@ gg_world <- function(theme = "default") {
   world_sf <- world_sf %>% 
     # converting to Robinson projection
     st_transform(crs = "ESRI:54030") %>% 
+    # simplifying polygons
+    ms_simplify(keep = 0.01, keep_shapes = TRUE) %>% 
     # fill colours and line widths
     { if (theme == "default") {
       mutate(., FILL = case_when(NAME == "India" ~ "#ffffff",
@@ -66,10 +69,10 @@ calc_repfreq_IN <- function(data, species, mig_status) {
   # filter data to only those grids and seasons where species reported
   data_mig <- data %>%
     filter(COMMON.NAME == species) %>%
-    { if (migstatus %in% c("S","W","P")){
-      distinct(GRID.G3) 
-    } else if (migstatus == "LM") {
-      distinct(GRID.G3, SEASON)
+    { if (mig_status %in% c("S","W","P")){
+      distinct(., GRID.G3) 
+    } else if (mig_status == "LM") {
+      distinct(., GRID.G3, SEASON)
     } else {
       .
     }} %>% 
@@ -153,16 +156,16 @@ gg_migrate <- function(
     pos_im, pos_gr
     ) {
   
+  # setup -----------------------------------------------------------------------------
+
   require(tidyverse)
   require(sf)
   require(magick)
-  require(gridExtra)
-  require(grid)
-  require(ggpubr)
+  # require(gridExtra)
+  # require(grid)
   require(extrafont)
-  require(ggformula)
-  require(zoo)
-  require(gifski)
+  require(gganimate)
+  require(transformr) # required to tween sf layers
   
   
   # default plotting settings unlikely to be changed
@@ -172,8 +175,8 @@ gg_migrate <- function(
   plot_step <- 10
   plot_fps <- 2
   
-  plot_col1 <- "red"
-  plot_col2 <- "blue"
+  plot_col1 <- "#5e488a"
+  plot_col2 <- "#449966"
   plot_cred1_col <- "black"
   plot_cred2_col <- "black"
   
@@ -181,9 +184,47 @@ gg_migrate <- function(
   
   
   pointsize, yaxis,
-  ggp,dataall,migstatus1,migstatus2,credit1,credit2,
+  ggp,dataall,migstatus1,migstatus2,
+  
+  plot_cred1, plot_cred2,
   
   
+  # output file name
+  
+  
+
+  # load current data -----------------------------------------------------------------
+
+  # import and filter data for current species
+  
+  
+  
+  if (n==1)
+  {
+    data = readcleanrawdata(rawpath = rawpath1)
+  }
+  
+  if (n!=1)
+  {
+    data1 = readcleanrawdata(rawpath = rawpath1)
+    data2 = readcleanrawdata(rawpath = rawpath2)
+    data = rbind(data1,data2)
+    data1 = data1 %>% select(COMMON.NAME)
+    data2 = data2 %>% select(COMMON.NAME)
+  }
+  
+  
+  
+  ###
+  
+  # spatialise species observation data
+  data_cur <- data %>% 
+    st_as_sf(coords = c("LONGITUDE", "LATITUDE")) %>% 
+    st_set_crs(st_crs(india_sf)) %>% 
+    st_transform(crs = "ESRI:54030")
+  
+
+  # calculating reporting frequency (if applicable) -----------------------------------
   
   # below not needed in _S functions ###
   
@@ -219,73 +260,77 @@ gg_migrate <- function(
 
   ### ###
   
-  # import and filter data for current species
-  
-  
-  # spatialise species observation data
-  data_cur <- data_cur %>% 
     
+
+  # 1. world base + points ------------------------------------------------------------
+
+  
+  # plot limits 
+  plot_lims <- tibble(X = c(-30, -30, 145, 145),
+                      Y = c(-35, 60, -35, 60)) %>% 
+    st_as_sf(coords = c("X", "Y")) %>% 
+    dplyr::summarise() %>% 
+    st_cast("POLYGON") %>% 
+    # important that limits are also projected to Robinson
+    st_set_crs(st_crs(india_sf)) %>% 
+    st_transform(crs = "ESRI:54030") %>% 
+    st_bbox()
+  
+  plot_base <- basemap +
+    geom_sf(data = data_cur %>% 
+              filter(YEAR > 2013) %>% 
+              mutate(across(c("DAY.Y", "FORT.Y", "MONTH"),
+                            ~ as.integer(.))), 
+            aes(group = FORT.Y),
+            alpha = 0.5, stroke = 0, size = 4, colour = plot_col1) +
+    # need to set coord limits (plot zoom limits)
+    coord_sf(xlim = c(plot_lims$xmin, plot_lims$xmax), 
+             ylim = c(plot_lims$ymin, plot_lims$ymax)) +
+    theme(legend.position = "none") +
+    # gganimate code
+    # ggtitle("{frame_time}") +
+    transition_time(FORT.Y) +
+    ease_aes("linear") +
+    # enter_fade() +
+    # exit_fade() 
+    shadow_wake(0.1)
+
+  anim_save("outputs/test.gif", plot_base,
+            # pass to animate()
+            duration = 12, # chose based on old maps, but makes sense (12 months)
+            res = 150, width = 10.5, height = 7, units = "in")
+  
+
+  # 2. repfreq spline (if applicable) -------------------------------------------------
+
+ 
+
+  # 3. other overlays -----------------------------------------------------------------
+
+  # empty image 
+  img = image_graph(width = 1080, height = 810, res = plot_res)
+  #datalist = split(data, data$fort)
   
   
+  # other images to use in plot
+  plot_mugshot <- image_read(photopath1) %>% 
+    image_scale("300") %>% 
+    image_border("#ffffff", "3x3") %>% 
+    image_annotate(plot_cred1, 
+                   font = "Gill Sans", size = 24, location = "+8+4", 
+                   color = plot_cred1_col)
   
-  if (n==1)
-  {
-    data = readcleanrawdata(rawpath = rawpath1)
-  }
+  plot_logo_bci <- image_read("birdcountindia logo.png") %>% 
+    image_scale("300") %>% 
+    image_background("#ffffff", flatten = TRUE)
   
-  if (n!=1)
-  {
-    data1 = readcleanrawdata(rawpath = rawpath1)
-    data2 = readcleanrawdata(rawpath = rawpath2)
-    data = rbind(data1,data2)
-    data1 = data1 %>% select(COMMON.NAME)
-    data2 = data2 %>% select(COMMON.NAME)
-  }
+  plot_logo_ebirdindia <- image_read("eBird India logo.png") %>% 
+    image_scale("300") %>% 
+    image_background("#ffffff", flatten = TRUE)
   
-  
-  
-  if (n==1)
-  {
-    species = data$COMMON.NAME[1]
-    cols = col1
-    specs = species
-    wd = strwidth(species,family = "Gill Sans",units = 'figure')
-    wd = wd + 0.04
-  }
-  
-  if (n==2)
-  {
-    spec1 = data1$COMMON.NAME[1]
-    spec2 = data2$COMMON.NAME[1]
-    specs = c(spec1,spec2)
-    species = paste(specs[1],"(blue)","    ",specs[2],"(red)")
-    if (sort(specs)[1] == specs[1])
-    {
-      cols = c(col2,col1)
-    }
-    if (sort(specs)[1] != specs[1])
-    {
-      cols = c(col1,col2)
-    }
-    wd = strwidth(species,family = "Gill Sans",units = 'figure')
-    wd = wd + 0.04
-  }
-  
-  
-  
-  
-  if (n == 1)
-  {
-    nm = specs
-    nm = paste(nm,"_",minlong,"_",minlat,"_",maxlong,"_",maxlat,".gif",sep = "")
-  }
-  
-  if (n != 1)
-  {
-    nm1 = specs1
-    nm2 = specs2
-    nm = paste(nm1,"_",nm2,"_",minlong,"_",minlat,"_",maxlong,"_",maxlat,".gif",sep = "")
-  }
+
+  # animate and export ----------------------------------------------------------------
+
   
 
 }

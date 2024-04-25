@@ -22,13 +22,13 @@ data <- data %>%
   filter(REVIEWED == 0 | APPROVED == 1) %>%
   # slice by GROUP.ID to remove duplicate checklists
   group_by(GROUP.ID, COMMON.NAME) %>% 
-  slice_sample(1) %>% 
+  slice_sample(n = 1) %>% 
   group_by(GROUP.ID) %>% 
   ungroup() %>%
   # add more columns
   mutate(DAY.Y = yday(OBSERVATION.DATE),
          WEEK.Y = week(OBSERVATION.DATE),
-         FORT.Y = ceiling(WEEK/2),
+         FORT.Y = ceiling(WEEK.Y/2),
          SEASON = case_when(MONTH %in% 5:8 ~ "Summer",
                             MONTH %in% 9:11 ~ "Autumn",
                             MONTH %in% c(12, 1:2) ~ "Winter",
@@ -50,7 +50,7 @@ india_buff_sf <- india_buff_sf %>% mutate(INLAND = 1)
 temp = data %>%
   distinct(GROUP.ID, LONGITUDE, LATITUDE) %>% 
   group_by(GROUP.ID) %>% 
-  slice_sample(1) %>% 
+  slice_sample(n = 1) %>% 
   ungroup() %>% 
   st_as_sf(coords = c("LONGITUDE", "LATITUDE"), remove = F) %>% 
   st_set_crs(st_crs(india_sf)) %>%
@@ -62,7 +62,7 @@ temp = data %>%
 temp = temp %>% 
   distinct(GROUP.ID, GRID.G3, INLAND) %>% 
   group_by(GROUP.ID) %>% 
-  slice_sample(1) %>% 
+  slice_sample(n = 1) %>% 
   ungroup()
 
 data = data %>% 

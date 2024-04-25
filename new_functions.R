@@ -676,134 +676,15 @@ migrationmapS = function(n=1,
                         credit_color = "black")
 {
 
-  if (n==1)
-  {
-    data = readcleanrawdata(rawpath = rawpath1)
-  }
+ 
   
-  if (n!=1)
-  {
-    data1 = readcleanrawdata(rawpath = rawpath1)
-    data2 = readcleanrawdata(rawpath = rawpath2)
-    data = rbind(data1,data2)
-    data1 = data1 %>% select(COMMON.NAME)
-    data2 = data2 %>% select(COMMON.NAME)
-  }
-  
-  PROJ = "+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs" 
-  #PROJ = "+proj=eck4 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs" 
-  
-  projdat = project(cbind(data$LONGITUDE,data$LATITUDE), proj = PROJ)
-  data = cbind(projdat, data)
-  names(data)[1:2] = c("long","lat")
-  
-  data = data %>% select(long,lat,COMMON.NAME,day)
-  
-  
-  min = project(cbind(minlong,minlat), proj = PROJ)
-  max = project(cbind(maxlong,maxlat), proj = PROJ)
-  
-  windowsFonts("Gill Sans" = windowsFont("Gill Sans"))
-  
-  ##############
-  
-  if (n==1)
-  {
-    species = data$COMMON.NAME[1]
-    cols = col1
-    specs = species
-    wd = strwidth(species,family = "Gill Sans",units = 'figure')
-    wd = wd + 0.04
-  }
-  
-  if (n==2)
-  {
-    spec1 = data1$COMMON.NAME[1]
-    spec2 = data2$COMMON.NAME[1]
-    specs = c(spec1,spec2)
-    species = paste(specs[1],"(blue)","    ",specs[2],"(red)")
-    if (sort(specs)[1] == specs[1])
-    {
-      cols = c(col2,col1)
-    }
-    if (sort(specs)[1] != specs[1])
-    {
-      cols = c(col1,col2)
-    }
-    wd = strwidth(species,family = "Gill Sans",units = 'figure')
-    wd = wd + 0.04
-  }
-  
-  mon = c(rep("January",31),rep("February",28),rep("March",31),rep("April",30),rep("May",31),rep("June",30),
-          rep("July",31),rep("August",31),rep("September",30),rep("October",31),rep("November",30),
-          rep("December",31))
-  
-  mlabs = c("J","F","M","A","M","J","J","A","S","O","N","D")
-  
-  img = image_graph(width = 1080, height = 810, res = res)
-  #datalist = split(data, data$fort)
-  
-  l = list()
-  nums = c(1:365,1:(range-1))
-  x = c(seq(101,365,step),seq(1,100,step))
-  
-  ct = 0
-  for (i in x)
-  {
-    ct = ct + 1
-    l[[ct]] = nums[i:(i+range-1)]
-    if(max(l[[ct]]) == 365 & min(l[[ct]]) == 1)
-      l[[ct]][l[[ct]]<=365 & l[[ct]]>(365-range)] = l[[ct]][l[[ct]]<=365 & l[[ct]]>(365-range)] - 365
-  }
-  
-
-  a = image_read(rawpathPhoto)
-  a = image_scale(a, "300")
-  a = image_border(a, "#ffffff", "3x3")
-  a = image_annotate(a, credit, font = 'Gill Sans', size = 24, location = "+8+4", color = credit_color)
-  
-  b = image_read("birdcountindia logo.png")
-  b = image_scale(b, "300")
-  b = image_background(b, "#ffffff", flatten = TRUE)
-  #b = image_border(b, "black", "3x3")
-  
-  c = image_read("eBird India logo.png")
-  c = image_scale(c, "300")
-  c = image_background(c, "#ffffff", flatten = TRUE)
-  #c = image_border(c, "black", "4x4")
-  
-    #cols = "#c26023"
   avg<-matrix(ncol = 2,nrow = 0)
   for (i in l){
     
-    v1 = i
-    if(min(v1) <= 0)
-    {
-      v1[v1<=0] = v1[v1<=0]+365
-    }
-    
-    temp = data %>%
-      filter(day %in% v1) %>%
-      distinct(long,lat,COMMON.NAME)
-    
-
-    med = floor(median(i))
-    if (med == 0)
-      med = 365
-    if (med < 0)
-      med = med + 365
-    
   
-    p = ggp +
-      geom_point(data = temp, aes(x = long,y = lat, col = COMMON.NAME, alpha = 0.99, stroke = 0), size = pointsize) +
-      coord_cartesian(xlim = c(min[1],max[1]), ylim = c(min[2],max[2])) +
-      theme(plot.title = element_text(hjust = 0.01, size = 10)) +
-      scale_color_manual(breaks = sort(specs), values = cols) +
-      #ggtitle(mon[med]) +
-      theme(legend.position = "none")
-    p1 = ggdraw(p)
-
     
+    
+    # label boxes for species names
     
     qj = ggplot() +
       theme(text=element_text(family="Gill Sans"))+
@@ -848,6 +729,9 @@ migrationmapS = function(n=1,
       
     qj2 = ggdraw(qk) +  
         draw_label(mon[med], 0.5, 0.59, size = 10, fontfamily="Gill Sans", fontface = 'bold', colour = "black")
+    
+    
+    
     
     vv<-ggdraw(p1) + {if(impos == "R")draw_image(a, x = 1.017, y = 0.955, hjust = 1, vjust = 0.9, 
                                                  width = 0.25, height = 0.25)} +
