@@ -16,6 +16,8 @@ gg_world <- function(theme = "default") {
   require(sf)
   require(rmapshaper) # to simplify sf
   
+  dir_prefix <- "../india-maps/"
+  load(glue("{dir_prefix}outputs/maps_sf.RData"))
   
   world_sf <- ne_countries(type = "countries", 
                            scale = "medium", returnclass = "sf") %>% 
@@ -70,8 +72,6 @@ gg_world <- function(theme = "default") {
 
 # calculate reporting frequency in India as a whole ---------------------------------
 
-# outputs list
-
 calc_repfreq_IN <- function(data, species, mig_status) {
   
   # filter data to only those grids and seasons where species reported
@@ -98,17 +98,19 @@ calc_repfreq_IN <- function(data, species, mig_status) {
     # calculate species-detected and total checklists for that day
     temp1 <- data_day %>% 
       filter(COMMON.NAME == species) %>% 
-      reframe(DET.DAY = n_distinct(GROUP.ID))
+      reframe(DET = n_distinct(GROUP.ID))
 
     temp2 <- data_day %>% 
-      reframe(LISTS.DAY = n_distinct(GROUP.ID)) %>% 
+      reframe(LISTS = n_distinct(GROUP.ID)) %>% 
       # denominator cannot be 0
-      mutate(LISTS.DAY = case_when(LISTS.DAY == 0 ~ 1,
-                                  TRUE ~ LISTS.DAY))
+      mutate(LISTS = case_when(LISTS == 0 ~ 1,
+                               TRUE ~ LISTS))
 
     to_return <- tibble(DAY.Y = .x) %>% 
       bind_cols(temp1, temp2) %>% 
-      mutate(REP.FREQ.DAY = 100*DET.DAY/LISTS.DAY)
+      rename(NUMBER = DAY.Y) %>% 
+      mutate(REP.FREQ = 100*DET/LISTS,
+             PERIOD = "DAY.Y")
     
     return(to_return)
     
@@ -126,17 +128,19 @@ calc_repfreq_IN <- function(data, species, mig_status) {
     # calculate species-detected and total checklists for that day
     temp1 <- data_fort %>% 
       filter(COMMON.NAME == species) %>% 
-      reframe(DET.FORT = n_distinct(GROUP.ID))
+      reframe(DET = n_distinct(GROUP.ID))
     
     temp2 <- data_fort %>% 
-      reframe(LISTS.FORT = n_distinct(GROUP.ID)) %>% 
+      reframe(LISTS = n_distinct(GROUP.ID)) %>% 
       # denominator cannot be 0
-      mutate(LISTS.FORT = case_when(LISTS.FORT == 0 ~ 1,
-                                  TRUE ~ LISTS.FORT))
+      mutate(LISTS = case_when(LISTS == 0 ~ 1,
+                                  TRUE ~ LISTS))
     
     to_return <- tibble(FORT.Y = .x) %>% 
       bind_cols(temp1, temp2) %>% 
-      mutate(REP.FREQ.FORT = 100*DET.FORT/LISTS.FORT)
+      rename(NUMBER = FORT.Y) %>% 
+      mutate(REP.FREQ = 100*DET/LISTS,
+             PERIOD = "FORT.Y")
     
     return(to_return)
     
@@ -144,11 +148,11 @@ calc_repfreq_IN <- function(data, species, mig_status) {
   
   
   # return both
-  return(list(data_freq_day, data_freq_fort))
+  return(bind_rows(data_freq_day, data_freq_fort) %>% 
+           mutate(SPECIES = species) %>% 
+           relocate(SPECIES, PERIOD, NUMBER))
 
 }
-
-
 
 
 # create animated migration maps ----------------------------------------------------
