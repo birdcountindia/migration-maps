@@ -4,28 +4,29 @@ library(sf)
 
 
 # species of interest for maps
-spec_mig <- c(
-  "Amur Falcon", "Arctic Warbler", "Ashy Drongo", "Asian Brown Flycatcher", "Bar-headed Goose",
-  "Black Baza", "Black Redstart", "Blue Rock-Thrush", "Blue-tailed Bee-eater", "Blyth's Reed Warbler",
-  "Brown-breasted Flycatcher", "Brown-headed Gull", 
-  "Cattle Egret", "Gray Nightjar", "Greater Whitethroat", ### CHANGE NAME
-  "Chestnut-headed Bee-eater", "Chestnut-winged Cuckoo", "Collared Pratincole", "Oriental Pratincole",
-  "Common Crane", "Common Cuckoo", "Common Greenshank", "Common Rosefinch", "Crab-Plover", 
-  "Demoiselle Crane", "Desert Wheatear", "Pied Wheatear", "Eurasian Wryneck", "European Bee-eater",
-  "European Roller", "Forest Wagtail", "Garganey", "Gray-headed Lapwing", 
-  "Great Cormorant", "Great White Pelican", "Green Warbler", "Greenish Warbler",
-  "Gull-billed Tern", "Hypocolius", "Indian Blue-Robin", "Indian Golden Oriole",
-  "Indian Paradise Flycatcher", "Indian Pitta", "Isabelline Shrike", "Brown Shrike",
-  "Isabelline Wheatear", "Kashmir Flycatcher", "Little Tern", "Northern Wheatear",
-  "Oriental Turtle-Dove", "Pacific Golden Plover", "Pallas's Fish-Eagle", "Pied Cuckoo",
-  "Red-breasted Flycatcher", "Red-flanked Bluetail", "Red-headed Bunting", "Rosy Starling",
-  "Rufous-tailed Scrub-Robin", "Sanderling", "Short-eared Owl", "Spot-winged Starling",
-  "Spotted Flycatcher", "Tytler's Leaf Warbler", "Whimbrel", "White-eyed Buzzard", 
-  "White-throated Needletail", "Willow Warbler", "Wilson's Storm-Petrel", 
-  "Yellow-browed Warbler", "Yellow-eyed Pigeon", 
-  # new additions 2024
-  "Rusty-tailed Flycatcher", "Pied Thrush"
-)
+# spec_mig <- c(
+#   "Amur Falcon", "Arctic Warbler", "Ashy Drongo", "Asian Brown Flycatcher", "Bar-headed Goose",
+#   "Black Baza", "Black Redstart", "Blue Rock-Thrush", "Blue-tailed Bee-eater", "Blyth's Reed Warbler",
+#   "Brown-breasted Flycatcher", "Brown-headed Gull", 
+#   "Cattle Egret", "Gray Nightjar", "Greater Whitethroat", ### CHANGE NAME
+#   "Chestnut-headed Bee-eater", "Chestnut-winged Cuckoo", "Collared Pratincole", "Oriental Pratincole",
+#   "Common Crane", "Common Cuckoo", "Common Greenshank", "Common Rosefinch", "Crab-Plover", 
+#   "Demoiselle Crane", "Desert Wheatear", "Pied Wheatear", "Eurasian Wryneck", "European Bee-eater",
+#   "European Roller", "Forest Wagtail", "Garganey", "Gray-headed Lapwing", 
+#   "Great Cormorant", "Great White Pelican", "Green Warbler", "Greenish Warbler",
+#   "Gull-billed Tern", "Hypocolius", "Indian Blue-Robin", "Indian Golden Oriole",
+#   "Indian Paradise Flycatcher", "Indian Pitta", "Isabelline Shrike", "Brown Shrike",
+#   "Isabelline Wheatear", "Kashmir Flycatcher", "Little Tern", "Northern Wheatear",
+#   "Oriental Turtle-Dove", "Pacific Golden Plover", "Pallas's Fish-Eagle", "Pied Cuckoo",
+#   "Red-breasted Flycatcher", "Red-flanked Bluetail", "Red-headed Bunting", "Rosy Starling",
+#   "Rufous-tailed Scrub-Robin", "Sanderling", "Short-eared Owl", "Spot-winged Starling",
+#   "Spotted Flycatcher", "Tytler's Leaf Warbler", "Whimbrel", "White-eyed Buzzard", 
+#   "White-throated Needletail", "Willow Warbler", "Wilson's Storm-Petrel", 
+#   "Yellow-browed Warbler", "Yellow-eyed Pigeon", 
+#   # new additions 2024
+#   "Rusty-tailed Flycatcher", "Pied Thrush"
+# )
+spec_mig <- c(get_spec_mig()$SPECIES1, get_spec_mig()$SPECIES2) %>% na.omit()
 
 
 # loading main data -----------------------------------------------------

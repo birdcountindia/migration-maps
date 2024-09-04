@@ -1,3 +1,11 @@
+# get species of interest -----------------------------------------------------------
+
+get_spec_mig <- function() {
+  require(readxl)
+  read_xlsx("data/species_mapping.xlsx", sheet = 1)
+}
+
+
 # world basemap ---------------------------------------------------------------------
 
 gg_world <- function(theme = "default") {
