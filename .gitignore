@@ -84,3 +84,6 @@ NE_box/
 NE_graticules/
 NE_countries/
 Division@Range6/
+
+
+data/01_import_data.RData
