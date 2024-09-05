@@ -41,23 +41,15 @@ migrationmap2(ggp = ggp, Species1 = "Isabelline Shrike", Species2 = "Brown Shrik
 end = Sys.time()
 end-start
 
+
+# single species 
+
 start = Sys.time()
 migrationmap(ggp = ggp, Species1 = "Red-headed Bunting", SciName = "Emberiza bruniceps",
              rawpath1 = "ebd_rehbun1_relMar-2020.txt", rawpathPhoto = "RHBU.jpg", yaxis = c(-0.1,1.2),
              res = 144,range = 30,step = 3,fps = 10, col1 = "#5e488a", 
              minlong = -10,minlat = 5,maxlong = 170,maxlat = 70, impos = "R", grpos = "L",
              pointsize = 2.5, dataall = data, migstatus = "LM", credit = "Charles J. Sharp")
-end = Sys.time()
-end-start
-
-
-start = Sys.time()
-ggp = worldbasemapgreen()
-migrationmapgreen(ggp = ggp, Species1 = "Red-headed Bunting", SciName = "Emberiza bruniceps",
-                  rawpath1 = "ebd_rehbun1_relMar-2020.txt", rawpathPhoto = "RHBU.jpg", yaxis = c(-0.1,1.2),
-                  res = 144,range = 30,step = 3,fps = 10, col1 = "#ffbd1c", 
-                  minlong = -10,minlat = 5,maxlong = 170,maxlat = 70, impos = "R", grpos = "L",
-                  pointsize = 2.5, dataall = data, migstatus = "LM", credit = "Charles J. Sharp")
 end = Sys.time()
 end-start
 

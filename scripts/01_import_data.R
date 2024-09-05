@@ -96,7 +96,14 @@ data_spec <- map_df(list.files(path = dir_prefix, pattern = ".txt"), ~{
          DAY.M = day(OBSERVATION.DATE)) %>% 
   # migratory year and month information
   mutate(M.YEAR = if_else(MONTH > 5, YEAR, YEAR-1), # from June to May
-         M.MONTH = if_else(MONTH > 5, MONTH-5, 12-(5-MONTH))) 
+         M.MONTH = if_else(MONTH > 5, MONTH-5, 12-(5-MONTH))) %>% 
+  mutate(DAY.Y = yday(OBSERVATION.DATE),
+         WEEK.Y = week(OBSERVATION.DATE),
+         FORT.Y = ceiling(WEEK.Y/2),
+         SEASON = case_when(MONTH %in% 5:8 ~ "Summer",
+                            MONTH %in% 9:11 ~ "Autumn",
+                            MONTH %in% c(12, 1:2) ~ "Winter",
+                            MONTH %in% 3:4 ~ "Spring"))
 
 
 # loading other data -----------------------------------------------------

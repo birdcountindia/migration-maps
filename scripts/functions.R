@@ -5,6 +5,11 @@ get_spec_mig <- function() {
   read_xlsx("data/species_mapping.xlsx", sheet = 1)
 }
 
+get_spec_photo <- function() {
+  require(readxl)
+  read_xlsx("data/species_mapping.xlsx", sheet = 2)
+}
+
 
 # world basemap ---------------------------------------------------------------------
 
@@ -72,18 +77,20 @@ gg_world <- function(theme = "default") {
 
 # calculate reporting frequency in India as a whole ---------------------------------
 
-calc_repfreq_IN <- function(data, species, mig_status) {
+calc_repfreq_IN <- function(data, species) {
   
   # filter data to only those grids and seasons where species reported
   data_mig <- data %>%
     filter(COMMON.NAME == species) %>%
-    { if (mig_status %in% c("S","W","P")){
-      distinct(., GRID.G3) 
-    } else if (mig_status == "LM") {
-      distinct(., GRID.G3, SEASON)
-    } else {
-      .
-    }} %>% 
+    # # this is the only step where mig status makes any difference
+    # # and no harm in using SEASON for all species anyway
+    # { if (mig_status %in% c("S","W","P")){
+    #   distinct(., GRID.G3) 
+    # } else if (mig_status == "LM") {
+      distinct(., GRID.G3, SEASON) %>% 
+    # } else {
+    #   .
+    # }} %>% 
     left_join(data)
   
   
@@ -160,13 +167,25 @@ calc_repfreq_IN <- function(data, species, mig_status) {
 # species names in eBird format
 
 gg_migrate <- function(
-    spec1, rawpath1, photopath1,
-    spec2, rawpath2, photopath2,
-    plot_world = FALSE, 
+    spec1, spec2 = NA, 
     plot_min_long = -15, plot_min_lat = -33, 
     plot_max_long = 180, plot_max_lat = 70,
     pos_im, pos_gr
-    ) {
+) {
+
+  # catches ---------------------------------------------------------------------------
+  
+  if (!exists("data_IN", envir = .GlobalEnv)) {
+    error("India data is required for calculating reporting frequencies!")
+  }
+
+    if (!exists("data_spec", envir = .GlobalEnv)) {
+    error("Object containing single-species eBird data is required!")
+  }
+  
+  if (!exists("basemap", envir = .GlobalEnv)) {
+    error("World basemap does not exist!")
+  }
   
   # setup -----------------------------------------------------------------------------
 
@@ -177,68 +196,71 @@ gg_migrate <- function(
   # require(grid)
   require(extrafont)
   require(gganimate)
+  require(gifski) # faster renderer
   require(transformr) # required to tween sf layers
+  
+  # load maps  
+  dir_prefix <- "../india-maps/"
+  load(glue("{dir_prefix}outputs/maps_sf.RData"))
   
   
   # default plotting settings unlikely to be changed
   
-  plot_res <- 144
+  plot_res <- 150
   plot_range <- 30
   plot_step <- 10
-  plot_fps <- 2
+  plot_fps <- 10
+  plot_world <- FALSE
+  
+  plot_yaxis <- c(-0.1, 1.2)
   
   plot_col1 <- "#5e488a"
   plot_col2 <- "#449966"
   plot_cred1_col <- "black"
   plot_cred2_col <- "black"
   
+  plot_pointsize <- 2.5 # if pelagic, 1.5
   
   
+  # photos for species
   
-  pointsize, yaxis,
-  ggp,dataall,migstatus1,migstatus2,
+  spec1_photo_info <- get_spec_photo() %>% filter(SPECIES == spec1)
+  if (is.na(spec2)) {
+    spec2_photo_info <- get_spec_photo() %>% filter(SPECIES == spec2)
+  }
+
   
-  plot_cred1, plot_cred2,
+  # # font for plot
+  # windowsFonts("Gill Sans" = windowsFont("Gill Sans"))
   
   
   # output file name
   
   
 
-  # load current data -----------------------------------------------------------------
+  # load current species data -----------------------------------------------------------------
 
   # import and filter data for current species
   
-  
-  
-  if (n==1)
-  {
-    data = readcleanrawdata(rawpath = rawpath1)
+  data_cur <- if (is.na(spec2)) {
+    data_spec %>% 
+      filter(COMMON.NAME == spec1)
+  } else {
+    data_spec %>% 
+      filter(COMMON.NAME %in% c(spec1, spec2))
   }
   
-  if (n!=1)
-  {
-    data1 = readcleanrawdata(rawpath = rawpath1)
-    data2 = readcleanrawdata(rawpath = rawpath2)
-    data = rbind(data1,data2)
-    data1 = data1 %>% select(COMMON.NAME)
-    data2 = data2 %>% select(COMMON.NAME)
-  }
-  
-  
-  
-  ###
-  
+
   # spatialise species observation data
-  data_cur <- data %>% 
+  data_cur <- data_cur %>% 
     st_as_sf(coords = c("LONGITUDE", "LATITUDE")) %>% 
     st_set_crs(st_crs(india_sf)) %>% 
     st_transform(crs = "ESRI:54030")
   
 
-  # calculating reporting frequency (if applicable) -----------------------------------
+  # calc. & plot inset of reporting frequency (if applicable) -----------------------------------
   
-  # below not needed in _S functions ###
+  # below not needed in for pelagic species ###
   
   freq = create_freq(Species = Species1, data = dataall, migstatus = migstatus)
   
@@ -310,7 +332,9 @@ gg_migrate <- function(
   anim_save("outputs/test.gif", plot_base,
             # pass to animate()
             duration = 12, # chose based on old maps, but makes sense (12 months)
-            res = 150, width = 10.5, height = 7, units = "in")
+            # fps = plot_fps,
+            res = plot_res, renderer = gifski_renderer(), 
+            width = 10.5, height = 7, units = "in")
   
 
   # 2. repfreq spline (if applicable) -------------------------------------------------
