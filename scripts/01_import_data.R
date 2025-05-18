@@ -34,7 +34,7 @@ spec_mig <- c(get_spec_mig()$SPECIES1, get_spec_mig()$SPECIES2) %>% na.omit()
 # india data to calculate repfreq (we show repfreq in India in gifs)
 
 # get_param()
-get_param(date_currel = "2022-01-01") # ### for tests without server and full data ###
+skimmr::ebird_rel_param(date_currel = "2022-01-01") # ### for tests without server and full data ###
 dir_prefix <- "data/EBD/" ### this will change: directly use RData from ebird-datasets/EBD/ ###
 maindatapath <- glue("{dir_prefix}ebd_IN_rel{currel_month_lab}-{currel_year}.RData")
 
@@ -106,13 +106,6 @@ data_spec <- map_df(list.files(path = dir_prefix, pattern = ".txt"), ~{
                             MONTH %in% 3:4 ~ "Spring"))
 
 
-# loading other data -----------------------------------------------------
-
-# SoIB main datasheet
-soib <- read.csv(url("https://github.com/stateofindiasbirds/soib_2023/raw/master/01_analyses_full/results/SoIB_main.csv"))
-### this will eventually come directly as data object in skimmr
-
-
 # joining spatial data --------------------------------------------------------------
 
 dir_prefix <- "../india-maps/"
@@ -154,5 +147,5 @@ data = data %>%
 data_IN <- data
 rm(data)
 
-save(data_IN, data_spec, soib,
+save(data_IN, data_spec, 
      file = "data/01_import_data.RData")

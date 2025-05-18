@@ -162,12 +162,68 @@ calc_repfreq_IN <- function(data, species) {
 }
 
 
+# inset for rep freq ------------------------------------------------------
+
+gg_repfreq <- function(species1, species2 = NULL) {
+  
+  if (!exists("data_IN", envir = .GlobalEnv)) {
+    error("India data is required for calculating repfeq!")
+  }
+  
+  data_repfreq <- if (is.null(species2)) {
+    calc_repfreq_IN(data_IN, species1)
+  } else {
+    calc_repfreq_IN(data_IN, species1) %>% 
+      bind_rows(calc_repfreq_IN(data_IN, species2))
+  }
+  
+  species <- if (is.null(species2)) species1 else c(species1, species2)
+    
+    
+  # linking fortnights to months of year
+  time_map <- data_repfreq %>% 
+    filter(PERIOD == "DAY.Y") %>% # days are smoother
+    distinct(NUMBER) %>% 
+    rename(DAY.Y = NUMBER) %>% 
+    left_join(data_IN %>% distinct(DAY.Y, MONTH), by = "DAY.Y") %>% 
+    mutate(MONTH.LAB = month(MONTH, label = TRUE)) %>% 
+    mutate(MONTH.LAB = str_sub(MONTH.LAB, start = 1, end = 1)) %>% 
+    # only want one month for one fortnight
+    group_by(DAY.Y) %>% 
+    slice_sample(n = 1) %>% 
+    ungroup()
+  
+  data_cur <- data_repfreq %>% 
+    filter(SPECIES %in% species,
+           PERIOD == "DAY.Y") %>% 
+    rename(DAY.Y = NUMBER) %>% 
+    mutate(PERIOD = NULL) %>% 
+    left_join(time_map, by = "DAY.Y")
+  
+  plot <- ggplot(data_cur) +
+    geom_smooth(aes(x = MONTH, y = REP.FREQ, colour = SPECIES), 
+                method = loess, method.args = list(span = 0.4),
+                se = FALSE, linewidth = 1.5) +
+    # facet_wrap(~ PERIOD, scale = "free_x") +
+    labs(title = glue("Frequency in India (max. {round(max(data_cur$REP.FREQ))}%)")) +
+    scale_x_continuous(breaks = data_cur$MONTH, labels = data_cur$MONTH.LAB) +
+    # colour scale different if two species 
+    scale_colour_manual(values = if (is.null(species2)) "black" else c(plot_col1, plot_col2)) +
+    theme_void() +
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(face = "plain", size = 14))
+  
+  return(plot)
+  
+}
+
+
 # create animated migration maps ----------------------------------------------------
 
 # species names in eBird format
 
 gg_migrate <- function(
-    spec1, spec2 = NA, 
+    spec1, spec2 = NULL, 
     plot_min_long = -15, plot_min_lat = -33, 
     plot_max_long = 180, plot_max_lat = 70,
     pos_im, pos_gr
@@ -225,7 +281,7 @@ gg_migrate <- function(
   # photos for species
   
   spec1_photo_info <- get_spec_photo() %>% filter(SPECIES == spec1)
-  if (is.na(spec2)) {
+  if (!is.null(spec2)) {
     spec2_photo_info <- get_spec_photo() %>% filter(SPECIES == spec2)
   }
 
@@ -240,9 +296,9 @@ gg_migrate <- function(
 
   # load current species data -----------------------------------------------------------------
 
-  # import and filter data for current species
+  # import and filter all occurrence data for current species
   
-  data_cur <- if (is.na(spec2)) {
+  data_cur <- if (is.null(spec2)) {
     data_spec %>% 
       filter(COMMON.NAME == spec1)
   } else {
@@ -257,44 +313,6 @@ gg_migrate <- function(
     st_set_crs(st_crs(india_sf)) %>% 
     st_transform(crs = "ESRI:54030")
   
-
-  # calc. & plot inset of reporting frequency (if applicable) -----------------------------------
-  
-  # below not needed in for pelagic species ###
-  
-  freq = create_freq(Species = Species1, data = dataall, migstatus = migstatus)
-  
-  freq1 = freq[[1]]
-  freq4 = freq[[2]]
-  freq1$checklists[freq1$checklists == 0] = 1
-  freq4$checklists[freq4$checklists == 0] = 1
-  freq1$perc = (freq1$detected/freq1$checklists)*100
-  freq4$perc = (freq4$detected/freq4$checklists)*100
-  mfort = rollmean(seq(0,365,14),2)
-  freq4$day = c(mfort,mfort[1]+365)
-  
-  spl1 = smooth.spline(c(freq1$day,(freq1$day+365),(freq1$day+730)),rep(freq1$perc,3),nknots=30)
-  spl4 = smooth.spline(c(freq4$day,(freq4$day+365),(freq4$day+730)),rep(freq4$perc,3),nknots=30)
-  
-  spl1a = predict(spl1,366:730)
-  spl1a = as.data.frame(spl1a)
-  spl1a$y[spl1a$y<0] = 0
-  
-  spl4a = predict(spl4,366:730)
-  spl4a = as.data.frame(spl4a)
-  spl4a$y[spl4a$y<0] = 0
-  
-  spl = spl4a
-  spl$x = 1:365
-  
-  mx = max(na.omit(spl$y))
-  yaxis = c(0,(mx+0.02))
-  ybreaks = seq(0,yaxis[2],1)
-  
-
-  ### ###
-  
-    
 
   # 1. world base + points ------------------------------------------------------------
 
@@ -338,9 +356,11 @@ gg_migrate <- function(
   
 
   # 2. repfreq spline (if applicable) -------------------------------------------------
-
- 
-
+  
+  # repfreq inset not required for pelagic species
+  
+  gg_repfreq(species1 = spec1, species2 = spec2)
+  
   # 3. other overlays -----------------------------------------------------------------
 
   # empty image 
