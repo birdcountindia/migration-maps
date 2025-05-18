@@ -84,7 +84,11 @@ plot_base <- basemap +
   # need to set coord limits (plot zoom limits)
   coord_sf(xlim = c(plot_lims$xmin, plot_lims$xmax), 
            ylim = c(plot_lims$ymin, plot_lims$ymax)) +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  transition_time(FORT.Y) +
+  ease_aes("linear") +
+  exit_disappear() +
+  shadow_wake(0.2, alpha = FALSE, size = NULL, falloff = 'sine-in')
 
 plot_inset <- gg_repfreq(species1 = spec1, species2 = spec2)
 
@@ -92,129 +96,6 @@ plot_inset <- gg_repfreq(species1 = spec1, species2 = spec2)
 plot_base + inset_element(plot_inset, 0, 0, 0.3, 0.25, align_to = "full")
 
 
-# checking fortnight ----------------------------------------------------------------
-
-basemap +
-  geom_sf(data = data_cur %>% 
-            filter(YEAR > 2013, 
-                   FORT.Y == 1) %>% 
-            mutate(across(c("DAY.Y", "FORT.Y", "MONTH"),
-                          ~ as.integer(.))), 
-          alpha = 0.5, stroke = 0, size = 4, colour = plot_col1) +
-  # need to set coord limits (plot zoom limits)
-  coord_sf(xlim = c(plot_lims$xmin, plot_lims$xmax), 
-           ylim = c(plot_lims$ymin, plot_lims$ymax))
-
-
-basemap +
-  geom_sf(data = data_cur %>% 
-            filter(YEAR > 2013, 
-                   FORT.Y == 2) %>% 
-            mutate(across(c("DAY.Y", "FORT.Y", "MONTH"),
-                          ~ as.integer(.))), 
-          alpha = 0.5, stroke = 0, size = 4, colour = plot_col1) +
-  # need to set coord limits (plot zoom limits)
-  coord_sf(xlim = c(plot_lims$xmin, plot_lims$xmax), 
-           ylim = c(plot_lims$ymin, plot_lims$ymax))
-
-basemap +
-  geom_sf(data = data_cur %>% 
-            filter(YEAR > 2013, 
-                   FORT.Y == 3) %>% 
-            mutate(across(c("DAY.Y", "FORT.Y", "MONTH"),
-                          ~ as.integer(.))), 
-          alpha = 0.5, stroke = 0, size = 4, colour = plot_col1) +
-  # need to set coord limits (plot zoom limits)
-  coord_sf(xlim = c(plot_lims$xmin, plot_lims$xmax), 
-           ylim = c(plot_lims$ymin, plot_lims$ymax))
-
-basemap +
-  geom_sf(data = data_cur %>% 
-            filter(YEAR > 2013, 
-                   FORT.Y == 4) %>% 
-            mutate(across(c("DAY.Y", "FORT.Y", "MONTH"),
-                          ~ as.integer(.))), 
-          alpha = 0.5, stroke = 0, size = 4, colour = plot_col1) +
-  # need to set coord limits (plot zoom limits)
-  coord_sf(xlim = c(plot_lims$xmin, plot_lims$xmax), 
-           ylim = c(plot_lims$ymin, plot_lims$ymax))
-
-basemap +
-  geom_sf(data = data_cur %>% 
-            filter(YEAR > 2013, 
-                   FORT.Y == 5) %>% 
-            mutate(across(c("DAY.Y", "FORT.Y", "MONTH"),
-                          ~ as.integer(.))), 
-          alpha = 0.5, stroke = 0, size = 4, colour = plot_col1) +
-  # need to set coord limits (plot zoom limits)
-  coord_sf(xlim = c(plot_lims$xmin, plot_lims$xmax), 
-           ylim = c(plot_lims$ymin, plot_lims$ymax))
-
-basemap +
-  geom_sf(data = data_cur %>% 
-            filter(YEAR > 2013, 
-                   FORT.Y == 6) %>% 
-            mutate(across(c("DAY.Y", "FORT.Y", "MONTH"),
-                          ~ as.integer(.))), 
-          alpha = 0.5, stroke = 0, size = 4, colour = plot_col1) +
-  # need to set coord limits (plot zoom limits)
-  coord_sf(xlim = c(plot_lims$xmin, plot_lims$xmax), 
-           ylim = c(plot_lims$ymin, plot_lims$ymax))
-
-basemap +
-  geom_sf(data = data_cur %>% 
-            filter(YEAR > 2013, 
-                   FORT.Y == 7) %>% 
-            mutate(across(c("DAY.Y", "FORT.Y", "MONTH"),
-                          ~ as.integer(.))), 
-          alpha = 0.5, stroke = 0, size = 4, colour = plot_col1) +
-  # need to set coord limits (plot zoom limits)
-  coord_sf(xlim = c(plot_lims$xmin, plot_lims$xmax), 
-           ylim = c(plot_lims$ymin, plot_lims$ymax))
-
-basemap +
-  geom_sf(data = data_cur %>% 
-            filter(YEAR > 2013, 
-                   FORT.Y == 8) %>% 
-            mutate(across(c("DAY.Y", "FORT.Y", "MONTH"),
-                          ~ as.integer(.))), 
-          alpha = 0.5, stroke = 0, size = 4, colour = plot_col1) +
-  # need to set coord limits (plot zoom limits)
-  coord_sf(xlim = c(plot_lims$xmin, plot_lims$xmax), 
-           ylim = c(plot_lims$ymin, plot_lims$ymax))
-
-basemap +
-  geom_sf(data = data_cur %>% 
-            filter(YEAR > 2013, 
-                   FORT.Y == 9) %>% 
-            mutate(across(c("DAY.Y", "FORT.Y", "MONTH"),
-                          ~ as.integer(.))), 
-          alpha = 0.5, stroke = 0, size = 4, colour = plot_col1) +
-  # need to set coord limits (plot zoom limits)
-  coord_sf(xlim = c(plot_lims$xmin, plot_lims$xmax), 
-           ylim = c(plot_lims$ymin, plot_lims$ymax))
-
-basemap +
-  geom_sf(data = data_cur %>% 
-            filter(YEAR > 2013, 
-                   FORT.Y == 10) %>% 
-            mutate(across(c("DAY.Y", "FORT.Y", "MONTH"),
-                          ~ as.integer(.))), 
-          alpha = 0.5, stroke = 0, size = 4, colour = plot_col1) +
-  # need to set coord limits (plot zoom limits)
-  coord_sf(xlim = c(plot_lims$xmin, plot_lims$xmax), 
-           ylim = c(plot_lims$ymin, plot_lims$ymax))
-
-basemap +
-  geom_sf(data = data_cur %>% 
-            filter(YEAR > 2013, 
-                   FORT.Y == 11) %>% 
-            mutate(across(c("DAY.Y", "FORT.Y", "MONTH"),
-                          ~ as.integer(.))), 
-          alpha = 0.5, stroke = 0, size = 4, colour = plot_col1) +
-  # need to set coord limits (plot zoom limits)
-  coord_sf(xlim = c(plot_lims$xmin, plot_lims$xmax), 
-           ylim = c(plot_lims$ymin, plot_lims$ymax))
 
 # testing stuttering with dummy data ------------------------------------------------
 
@@ -230,5 +111,6 @@ data_test %>%
   geom_point() +
   transition_time(NO) +
   ease_aes("linear") +
-  shadow_wake(0.1, falloff = 'sine-in')
+  exit_disappear() +
+  shadow_wake(0.2, alpha = FALSE, size = NULL, falloff = 'sine-in')
 

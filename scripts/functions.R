@@ -364,13 +364,18 @@ gg_migrate <- function(
     coord_sf(xlim = c(plot_lims$xmin, plot_lims$xmax), 
              ylim = c(plot_lims$ymin, plot_lims$ymax)) +
     theme(legend.position = "none") +
-    # gganimate code
-    # ggtitle("{frame_time}") +
     transition_time(DAY.Y) +
     ease_aes("linear") +
-    # enter_fade() +
-    # exit_fade() 
-    shadow_wake(0.1)
+    exit_disappear() +
+    shadow_wake(0.2, alpha = FALSE, size = NULL, falloff = 'sine-in')
+  
+  
+  anim_save("outputs/test.gif", plot_base,
+            # pass to animate()
+            duration = 12, # chose based on old maps, but makes sense (12 months)
+            # fps = plot_fps,
+            res = plot_res, renderer = gifski_renderer(), 
+            width = 10.5, height = 7, units = "in")
   
 
   # 2. repfreq spline (if applicable) -------------------------------------------------
@@ -407,14 +412,6 @@ gg_migrate <- function(
 
   plot_full <- plot_base + 
     inset_element(plot_inset, 0, 0, 0.3, 0.25, align_to = "full")
-  
-  
-  anim_save("outputs/test.gif", plot_full,
-            # pass to animate()
-            duration = 12, # chose based on old maps, but makes sense (12 months)
-            # fps = plot_fps,
-            res = plot_res, renderer = gifski_renderer(), 
-            width = 10.5, height = 7, units = "in")
   
 
 }
