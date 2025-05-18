@@ -91,7 +91,7 @@ calc_repfreq_IN <- function(data, species) {
     # } else {
     #   .
     # }} %>% 
-    left_join(data)
+    left_join(data, by = c("GRID.G3", "SEASON"))
   
   
   # daily freq
@@ -198,20 +198,42 @@ gg_repfreq <- function(species1, species2 = NULL) {
            PERIOD == "DAY.Y") %>% 
     rename(DAY.Y = NUMBER) %>% 
     mutate(PERIOD = NULL) %>% 
-    left_join(time_map, by = "DAY.Y")
+    left_join(time_map, by = "DAY.Y") %>%
+    # fractional scaling of day-month numbers
+    group_by(MONTH) %>% 
+    mutate(DAY.M = DAY.Y - (first(DAY.Y) - 1),
+           MONTH.SCALED = (MONTH - 0.5) + (DAY.M - 1) / n_distinct(DAY.Y))
   
-  plot <- ggplot(data_cur) +
-    geom_smooth(aes(x = MONTH, y = REP.FREQ, colour = SPECIES), 
-                method = loess, method.args = list(span = 0.4),
-                se = FALSE, linewidth = 1.5) +
-    # facet_wrap(~ PERIOD, scale = "free_x") +
+  # precompute loess-smoothed line to remain static when vline animated
+  smoothed_data <- data_cur %>%
+    group_by(SPECIES) %>%
+    nest() %>%
+    mutate(
+      model = map(data, ~ loess(REP.FREQ ~ MONTH.SCALED, data = ., span = 0.4)),
+      new_x = map(data, ~ seq(min(.$MONTH.SCALED), max(.$MONTH.SCALED), length.out = 200)),
+      pred_y = map2(model, new_x, ~ predict(.x, newdata = data.frame(MONTH.SCALED = .y)))
+    ) %>%
+    unnest(c(new_x, pred_y)) %>%
+    rename(MONTH.SCALED.STATIC = new_x, 
+           REP.FREQ = pred_y) %>%
+    select(SPECIES, MONTH.SCALED.STATIC, REP.FREQ)
+  
+  
+  plot <- ggplot() +
+    geom_line(data = smoothed_data, inherit.aes = FALSE,
+              aes(x = MONTH.SCALED.STATIC, y = REP.FREQ, colour = SPECIES), linewidth = 1.5) +
+    geom_vline(data = data_cur,
+               aes(xintercept = MONTH.SCALED, group = MONTH.SCALED)) +
     labs(title = glue("Frequency in India (max. {round(max(data_cur$REP.FREQ))}%)")) +
     scale_x_continuous(breaks = data_cur$MONTH, labels = data_cur$MONTH.LAB) +
     # colour scale different if two species 
-    scale_colour_manual(values = if (is.null(species2)) "black" else c(plot_col1, plot_col2)) +
+    scale_colour_manual(values = if (is.null(spec2)) "black" else c(plot_col1, plot_col2)) +
     theme_void() +
     theme(plot.title = element_text(hjust = 0.5),
-          axis.text.x = element_text(face = "plain", size = 14))
+          axis.text.x = element_text(face = "plain", size = 14),
+          legend.position = "none") +
+    transition_time(MONTH.SCALED) +
+    ease_aes("linear") 
   
   return(plot)
   
@@ -333,15 +355,16 @@ gg_migrate <- function(
               filter(YEAR > 2013) %>% 
               mutate(across(c("DAY.Y", "FORT.Y", "MONTH"),
                             ~ as.integer(.))), 
-            aes(group = FORT.Y),
-            alpha = 0.5, stroke = 0, size = 4, colour = plot_col1) +
+            aes(group = DAY.Y),
+            colour = c(plot_col1), # different if more than two species
+            alpha = 0.5, stroke = 0, size = 4) +
     # need to set coord limits (plot zoom limits)
     coord_sf(xlim = c(plot_lims$xmin, plot_lims$xmax), 
              ylim = c(plot_lims$ymin, plot_lims$ymax)) +
     theme(legend.position = "none") +
     # gganimate code
     # ggtitle("{frame_time}") +
-    transition_time(FORT.Y) +
+    transition_time(DAY.Y) +
     ease_aes("linear") +
     # enter_fade() +
     # exit_fade() 
@@ -359,7 +382,7 @@ gg_migrate <- function(
   
   # repfreq inset not required for pelagic species
   
-  gg_repfreq(species1 = spec1, species2 = spec2)
+  plot_inset <- gg_repfreq(species1 = spec1, species2 = spec2)
   
   # 3. other overlays -----------------------------------------------------------------
 
