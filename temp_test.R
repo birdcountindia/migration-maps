@@ -84,95 +84,12 @@ plot_base <- basemap +
   # need to set coord limits (plot zoom limits)
   coord_sf(xlim = c(plot_lims$xmin, plot_lims$xmax), 
            ylim = c(plot_lims$ymin, plot_lims$ymax)) +
-  theme(legend.position = "none") +
-  # gganimate code
-  # ggtitle("{frame_time}") +
-  transition_time(FORT.Y) +
-  ease_aes("linear") +
-  # enter_fade() +
-  # exit_fade() 
-  shadow_wake(0.1)
+  theme(legend.position = "none")
 
-anim_save("outputs/test.gif", plot_base,
-          # pass to animate()
-          duration = 12, # chose based on old maps, but makes sense (12 months)
-          # fps = plot_fps,
-          res = plot_res, renderer = gifski_renderer(), 
-          width = 10.5, height = 7, units = "in")
+plot_inset <- gg_repfreq(species1 = spec1, species2 = spec2)
 
 
-gg_repfreq(species1 = spec1, species2 = spec2) +
-  transition_time(DAY.Y) +
-  ease_aes("linear") +
-  # enter_fade() +
-  # exit_fade() 
-  shadow_wake(0.1)
-
-
-
-
-
-data_cur <- if (is.null(spec2)) {
-  calc_repfreq_IN(data_IN, spec1)
-} else {
-  calc_repfreq_IN(data_IN, spec1) %>% 
-    bind_rows(calc_repfreq_IN(data_IN, spec2))
-} 
-
-time_map <- data_cur %>% 
-  filter(PERIOD == "DAY.Y") %>% # days are smoother
-  distinct(NUMBER) %>% 
-  rename(DAY.Y = NUMBER) %>% 
-  left_join(data_IN %>% distinct(DAY.Y, MONTH), by = "DAY.Y") %>% 
-  mutate(MONTH.LAB = month(MONTH, label = TRUE)) %>% 
-  mutate(MONTH.LAB = str_sub(MONTH.LAB, start = 1, end = 1)) %>% 
-  # only want one month for one fortnight
-  group_by(DAY.Y) %>% 
-  slice_sample(n = 1) %>% 
-  ungroup()
-
-data_cur <- data_cur %>% 
-  filter(SPECIES %in% spec1,
-         PERIOD == "DAY.Y") %>% 
-  rename(DAY.Y = NUMBER) %>% 
-  mutate(PERIOD = NULL) %>% 
-  left_join(time_map, by = "DAY.Y") %>%
-  # fractional scaling of day-month numbers
-  group_by(MONTH) %>% 
-  mutate(DAY.M = DAY.Y - (first(DAY.Y) - 1),
-         MONTH.SCALED = (MONTH - 0.5) + (DAY.M - 1) / n_distinct(DAY.Y))
-
-# precompute loess-smoothed line to remain static when vline animated
-smoothed_data <- data_cur %>%
-  group_by(SPECIES) %>%
-  nest() %>%
-  mutate(
-    model = map(data, ~ loess(REP.FREQ ~ MONTH.SCALED, data = ., span = 0.4)),
-    new_x = map(data, ~ seq(min(.$MONTH.SCALED), max(.$MONTH.SCALED), length.out = 200)),
-    pred_y = map2(model, new_x, ~ predict(.x, newdata = data.frame(MONTH.SCALED = .y)))
-  ) %>%
-  unnest(c(new_x, pred_y)) %>%
-  rename(MONTH.SCALED.STATIC = new_x, 
-         REP.FREQ = pred_y) %>%
-  select(SPECIES, MONTH.SCALED.STATIC, REP.FREQ)
-
-ggplot() +
-  geom_line(data = smoothed_data, inherit.aes = FALSE,
-            aes(x = MONTH.SCALED.STATIC, y = REP.FREQ, colour = SPECIES), linewidth = 1.5) +
-  geom_vline(data = data_cur,
-             aes(xintercept = MONTH.SCALED, group = MONTH.SCALED)) +
-  labs(title = glue("Frequency in India (max. {round(max(data_cur$REP.FREQ))}%)")) +
-  scale_x_continuous(breaks = data_cur$MONTH, labels = data_cur$MONTH.LAB) +
-  # colour scale different if two species 
-  scale_colour_manual(values = if (is.null(spec2)) "black" else c(plot_col1, plot_col2)) +
-  theme_void() +
-  theme(plot.title = element_text(hjust = 0.5),
-        axis.text.x = element_text(face = "plain", size = 14),
-        legend.position = "none") +
-  transition_time(MONTH.SCALED) +
-  ease_aes("linear") 
-
-
+plot_base + inset_element(plot_inset, 0, 0, 0.3, 0.25, align_to = "full")
 
 
 # checking fortnight ----------------------------------------------------------------

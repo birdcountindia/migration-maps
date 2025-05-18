@@ -230,6 +230,7 @@ gg_repfreq <- function(species1, species2 = NULL) {
     scale_colour_manual(values = if (is.null(spec2)) "black" else c(plot_col1, plot_col2)) +
     theme_void() +
     theme(plot.title = element_text(hjust = 0.5),
+          plot.background = element_rect(fill = "white", colour = "black"),
           axis.text.x = element_text(face = "plain", size = 14),
           legend.position = "none") +
     transition_time(MONTH.SCALED) +
@@ -276,6 +277,7 @@ gg_migrate <- function(
   require(gganimate)
   require(gifski) # faster renderer
   require(transformr) # required to tween sf layers
+  require(patchwork)
   
   # load maps  
   dir_prefix <- "../india-maps/"
@@ -369,13 +371,6 @@ gg_migrate <- function(
     # enter_fade() +
     # exit_fade() 
     shadow_wake(0.1)
-
-  anim_save("outputs/test.gif", plot_base,
-            # pass to animate()
-            duration = 12, # chose based on old maps, but makes sense (12 months)
-            # fps = plot_fps,
-            res = plot_res, renderer = gifski_renderer(), 
-            width = 10.5, height = 7, units = "in")
   
 
   # 2. repfreq spline (if applicable) -------------------------------------------------
@@ -410,6 +405,16 @@ gg_migrate <- function(
 
   # animate and export ----------------------------------------------------------------
 
+  plot_full <- plot_base + 
+    inset_element(plot_inset, 0, 0, 0.3, 0.25, align_to = "full")
+  
+  
+  anim_save("outputs/test.gif", plot_full,
+            # pass to animate()
+            duration = 12, # chose based on old maps, but makes sense (12 months)
+            # fps = plot_fps,
+            res = plot_res, renderer = gifski_renderer(), 
+            width = 10.5, height = 7, units = "in")
   
 
 }
