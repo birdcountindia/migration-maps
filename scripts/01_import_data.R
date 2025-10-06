@@ -26,6 +26,7 @@ spec_mig <- c(
   # new additions 2024
   "Rusty-tailed Flycatcher", "Pied Thrush"
 )
+
 spec_mig <- c(get_spec_mig()$SPECIES1, get_spec_mig()$SPECIES2) %>% na.omit()
 
 
@@ -79,9 +80,9 @@ preimp <- c("CATEGORY","EXOTIC.CODE","COMMON.NAME","OBSERVATION.COUNT",
             "LOCALITY.ID","LOCALITY.TYPE","REVIEWED","APPROVED","LAST.EDITED.DATE",
             "STATE","STATE.CODE","COUNTY","COUNTY.CODE",
             "LATITUDE","LONGITUDE","OBSERVATION.DATE","TIME.OBSERVATIONS.STARTED","OBSERVER.ID",
-            "PROTOCOL.TYPE","DURATION.MINUTES","EFFORT.DISTANCE.KM","LOCALITY","BREEDING.CODE",
+            "PROTOCOL.NAME","DURATION.MINUTES","EFFORT.DISTANCE.KM","LOCALITY","BREEDING.CODE",
             "NUMBER.OBSERVERS","ALL.SPECIES.REPORTED","GROUP.IDENTIFIER","SAMPLING.EVENT.IDENTIFIER",
-            "TRIP.COMMENTS","SPECIES.COMMENTS", "HAS.MEDIA")
+            "CHECKLIST.COMMENTS","SPECIES.COMMENTS", "HAS.MEDIA")
 
 
 data_spec <- map_df(list.files(path = dir_prefix, pattern = ".txt"), ~{

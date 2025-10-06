@@ -286,8 +286,8 @@ gg_migrate <- function(
   # default plotting settings unlikely to be changed
   
   plot_res <- 150
-  plot_range <- 30
-  plot_step <- 10
+  plot_range <- 30  #time window 
+  plot_step <- 10 # increment value # 3/5
   plot_fps <- 12
   plot_world <- FALSE
   

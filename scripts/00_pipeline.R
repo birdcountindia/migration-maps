@@ -8,8 +8,8 @@ source("scripts/functions.R")
 
 # # import and process data
 # uncomment this if new data has to be processed.
-#source("scripts/01_import_data.R") 
 
+source("scripts/01_import_data.R") 
 load("data/01_import_data.RData")
 
 # create world basemap
