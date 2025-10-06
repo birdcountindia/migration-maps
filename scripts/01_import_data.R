@@ -1,6 +1,8 @@
 library(skimmr)
 library(lubridate)
 library(sf)
+library(dplyr)
+library(purrr)
 
 
 # species of interest for maps
@@ -42,7 +44,6 @@ dir_prefix <- "data/EBD/" ### this will change: directly use RData from ebird-da
 maindatapath <- glue("../ebird-datasets/EBD/ebd_IN_rel{currel_month_lab}-{currel_year}.RData")
 
 load(maindatapath)
-
 
 # preparing data 
 data <- data %>%

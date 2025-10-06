@@ -19,5 +19,3 @@ basemap <- gg_world()
 # single-species terrestrial species ------------------------------------------------
 
 gg_migrate("Blyth's Reed Warbler")
-
-
