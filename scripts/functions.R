@@ -164,7 +164,7 @@ calc_repfreq_IN <- function(data, species) {
 
 # inset for rep freq ------------------------------------------------------
 
-gg_repfreq <- function(species1, species2 = NULL) {
+gg_repfreq <- function(species1, species2) {
   
   if (!exists("data_IN", envir = .GlobalEnv)) {
     error("India data is required for calculating repfeq!")
@@ -224,7 +224,7 @@ gg_repfreq <- function(species1, species2 = NULL) {
               aes(x = MONTH.SCALED.STATIC, y = REP.FREQ, colour = SPECIES), linewidth = 1.5) +
     geom_vline(data = data_cur,
                aes(xintercept = MONTH.SCALED, group = MONTH.SCALED)) +
-    labs(title = glue("Frequency in India (max. {round(max(data_cur$REP.FREQ))}%)")) +
+    labs(title = glue("Frequency in India (max.{round(max(data_cur$REP.FREQ))}%)")) +
     scale_x_continuous(breaks = data_cur$MONTH, labels = data_cur$MONTH.LAB) +
     # colour scale different if two species 
     scale_colour_manual(values = if (is.null(spec2)) "black" else c(plot_col1, plot_col2)) +
@@ -251,14 +251,13 @@ gg_migrate <- function(
     plot_max_long = 180, plot_max_lat = 70,
     pos_im, pos_gr
 ) {
-
   # catches ---------------------------------------------------------------------------
   
   if (!exists("data_IN", envir = .GlobalEnv)) {
     error("India data is required for calculating reporting frequencies!")
   }
-
-    if (!exists("data_spec", envir = .GlobalEnv)) {
+  
+  if (!exists("data_spec", envir = .GlobalEnv)) {
     error("Object containing single-species eBird data is required!")
   }
   
@@ -267,7 +266,7 @@ gg_migrate <- function(
   }
   
   # setup -----------------------------------------------------------------------------
-
+  
   require(tidyverse)
   require(sf)
   require(magick)
@@ -289,7 +288,7 @@ gg_migrate <- function(
   plot_res <- 150
   plot_range <- 30
   plot_step <- 10
-  plot_fps <- 10
+  plot_fps <- 12
   plot_world <- FALSE
   
   plot_yaxis <- c(-0.1, 1.2)
@@ -308,18 +307,13 @@ gg_migrate <- function(
   if (!is.null(spec2)) {
     spec2_photo_info <- get_spec_photo() %>% filter(SPECIES == spec2)
   }
-
+  
   
   # # font for plot
   # windowsFonts("Gill Sans" = windowsFont("Gill Sans"))
   
-  
-  # output file name
-  
-  
-
   # load current species data -----------------------------------------------------------------
-
+  
   # import and filter all occurrence data for current species
   
   data_cur <- if (is.null(spec2)) {
@@ -330,16 +324,16 @@ gg_migrate <- function(
       filter(COMMON.NAME %in% c(spec1, spec2))
   }
   
-
+  
   # spatialise species observation data
   data_cur <- data_cur %>% 
     st_as_sf(coords = c("LONGITUDE", "LATITUDE")) %>% 
     st_set_crs(st_crs(india_sf)) %>% 
     st_transform(crs = "ESRI:54030")
   
-
+  
   # 1. world base + points ------------------------------------------------------------
-
+  
   
   # plot limits 
   plot_lims <- tibble(X = c(-30, -30, 145, 145),
@@ -364,54 +358,99 @@ gg_migrate <- function(
     coord_sf(xlim = c(plot_lims$xmin, plot_lims$xmax), 
              ylim = c(plot_lims$ymin, plot_lims$ymax)) +
     theme(legend.position = "none") +
-    transition_time(DAY.Y) +
+    transition_time(FORT.Y) + #change the transition here as per render requirements 
     ease_aes("linear") +
     exit_disappear() +
     shadow_wake(0.2, alpha = FALSE, size = NULL, falloff = 'sine-in')
   
-  
   anim_save("outputs/test.gif", plot_base,
             # pass to animate()
             duration = 12, # chose based on old maps, but makes sense (12 months)
-            # fps = plot_fps,
+            fps = plot_fps,
             res = plot_res, renderer = gifski_renderer(), 
             width = 10.5, height = 7, units = "in")
   
-
+  
   # 2. repfreq spline (if applicable) -------------------------------------------------
   
   # repfreq inset not required for pelagic species
   
-  plot_inset <- gg_repfreq(species1 = spec1, species2 = spec2)
+  plot_inset <- if (is.null(spec2)) {
+    gg_repfreq(species1 = spec1, species2 = NULL)
+  } else {
+    gg_repfreq(species1 = spec1, species2 = spec2)
+  }
   
   # 3. other overlays -----------------------------------------------------------------
-
+  
   # empty image 
   img = image_graph(width = 1080, height = 810, res = plot_res)
   #datalist = split(data, data$fort)
   
   
   # other images to use in plot
-  plot_mugshot <- image_read(photopath1) %>% 
+  plot_mugshot <- image_read(paste0("data/mugshots/", spec1_photo_info$PHOTO.FILE)) %>% 
     image_scale("300") %>% 
     image_border("#ffffff", "3x3") %>% 
-    image_annotate(plot_cred1, 
+    image_annotate(spec1_photo_info$PHOTO.CREDIT, 
                    font = "Gill Sans", size = 24, location = "+8+4", 
                    color = plot_cred1_col)
   
-  plot_logo_bci <- image_read("birdcountindia logo.png") %>% 
+  plot_logo_bci <- image_read("birdcountindia_logo.png") %>% 
     image_scale("300") %>% 
-    image_background("#ffffff", flatten = TRUE)
+    image_background("#ffffff", flatten = FALSE)
   
-  plot_logo_ebirdindia <- image_read("eBird India logo.png") %>% 
+  plot_logo_ebirdindia <- image_read("eBird_India_Logo.png") %>% 
     image_scale("300") %>% 
-    image_background("#ffffff", flatten = TRUE)
+    image_background("#ffffff", flatten = FALSE)
   
-
-  # animate and export ----------------------------------------------------------------
-
-  plot_full <- plot_base + 
-    inset_element(plot_inset, 0, 0, 0.3, 0.25, align_to = "full")
+  plot_namecard <- image_blank(width = 600, height = 100, color = "none") %>% 
+    image_annotate(
+      text = spec1,
+      font = "Gill Sans",         
+      size = 60,
+      color = plot_col1,
+      gravity = "center",
+      strokecolor = plot_col1,    
+      strokewidth = 2           
+    ) #for single species only, modify accordingly for 2 species
   
-
-}
+  
+  # Animate and Combine --------------------------------------------------------------------
+  
+  anim_inset <- animate(
+    plot_inset,
+    duration = 12,
+    fps = plot_fps,
+    res = plot_res,
+    width = 400, height = 300,
+    renderer = gifski_renderer ()
+  )  
+  
+  anim_save("outputs/inset.gif", animation = anim_inset)
+  
+  map_gif <- image_read("outputs/test.gif")
+  inset_gif <- image_read("outputs/inset.gif")
+  
+  stopifnot(length(map_gif) == length(inset_gif))
+  
+  map_frames   <- as.list(map_gif)
+  inset_frames <- as.list(inset_gif)
+  
+  # Apply frame by frame
+  out_frames <- map2(map_frames, inset_frames, ~ {
+    image_composite(.x, image_scale(.y, "300"), offset = "+1225+785") %>%
+      image_composite(image_scale(plot_mugshot, "275"), offset = "+20+20") %>%
+      image_composite(image_scale(plot_logo_bci, "250"), offset = "+20+900") %>%
+      image_composite(image_scale(plot_logo_ebirdindia, "150"), offset = "+275 +900") %>% 
+      image_composite(image_scale(plot_namecard, "500"), gravity = "north")
+    
+  })
+  
+  # Recombine into an animated GIF
+  map_gif <- image_join(out_frames)
+  
+  filepath <- paste0("outputs/", spec1, "_migration_map.gif")
+  image_write(image_join(map_gif), path = filepath)
+  
+  }

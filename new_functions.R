@@ -57,12 +57,12 @@ migrationmap = function(Species1,SciName, rawpath1, rawpath2=NA,
   a = image_border(a, "#ffffff", "3x3")
   a = image_annotate(a, credit, font = 'Gill Sans', size = 24, location = "+8+4", color = credit_color)
   
-  b = image_read("birdcountindia logo.png")
+  b = image_read("birdcountindia_logo.png")
   b = image_scale(b, "300")
   b = image_background(b, "#ffffff", flatten = TRUE)
   #b = image_border(b, "black", "3x3")
   
-  c = image_read("eBird India logo.png")
+  c = image_read("eBird_India_logo.png")
   c = image_scale(c, "300")
   c = image_background(c, "#ffffff", flatten = TRUE)
   #c = image_border(c, "black", "4x4")

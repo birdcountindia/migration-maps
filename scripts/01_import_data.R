@@ -4,28 +4,28 @@ library(sf)
 
 
 # species of interest for maps
-# spec_mig <- c(
-#   "Amur Falcon", "Arctic Warbler", "Ashy Drongo", "Asian Brown Flycatcher", "Bar-headed Goose",
-#   "Black Baza", "Black Redstart", "Blue Rock-Thrush", "Blue-tailed Bee-eater", "Blyth's Reed Warbler",
-#   "Brown-breasted Flycatcher", "Brown-headed Gull", 
-#   "Cattle Egret", "Gray Nightjar", "Greater Whitethroat", ### CHANGE NAME
-#   "Chestnut-headed Bee-eater", "Chestnut-winged Cuckoo", "Collared Pratincole", "Oriental Pratincole",
-#   "Common Crane", "Common Cuckoo", "Common Greenshank", "Common Rosefinch", "Crab-Plover", 
-#   "Demoiselle Crane", "Desert Wheatear", "Pied Wheatear", "Eurasian Wryneck", "European Bee-eater",
-#   "European Roller", "Forest Wagtail", "Garganey", "Gray-headed Lapwing", 
-#   "Great Cormorant", "Great White Pelican", "Green Warbler", "Greenish Warbler",
-#   "Gull-billed Tern", "Hypocolius", "Indian Blue-Robin", "Indian Golden Oriole",
-#   "Indian Paradise Flycatcher", "Indian Pitta", "Isabelline Shrike", "Brown Shrike",
-#   "Isabelline Wheatear", "Kashmir Flycatcher", "Little Tern", "Northern Wheatear",
-#   "Oriental Turtle-Dove", "Pacific Golden Plover", "Pallas's Fish-Eagle", "Pied Cuckoo",
-#   "Red-breasted Flycatcher", "Red-flanked Bluetail", "Red-headed Bunting", "Rosy Starling",
-#   "Rufous-tailed Scrub-Robin", "Sanderling", "Short-eared Owl", "Spot-winged Starling",
-#   "Spotted Flycatcher", "Tytler's Leaf Warbler", "Whimbrel", "White-eyed Buzzard", 
-#   "White-throated Needletail", "Willow Warbler", "Wilson's Storm-Petrel", 
-#   "Yellow-browed Warbler", "Yellow-eyed Pigeon", 
-#   # new additions 2024
-#   "Rusty-tailed Flycatcher", "Pied Thrush"
-# )
+spec_mig <- c(
+  "Amur Falcon", "Arctic Warbler", "Ashy Drongo", "Asian Brown Flycatcher", "Bar-headed Goose",
+  "Black Baza", "Black Redstart", "Blue Rock-Thrush", "Blue-tailed Bee-eater", "Blyth's Reed Warbler",
+  "Brown-breasted Flycatcher", "Brown-headed Gull",
+  "Cattle Egret", "Gray Nightjar", "Greater Whitethroat", ### CHANGE NAME
+  "Chestnut-headed Bee-eater", "Chestnut-winged Cuckoo", "Collared Pratincole", "Oriental Pratincole",
+  "Common Crane", "Common Cuckoo", "Common Greenshank", "Common Rosefinch", "Crab-Plover",
+  "Demoiselle Crane", "Desert Wheatear", "Pied Wheatear", "Eurasian Wryneck", "European Bee-eater",
+  "European Roller", "Forest Wagtail", "Garganey", "Gray-headed Lapwing",
+  "Great Cormorant", "Great White Pelican", "Green Warbler", "Greenish Warbler",
+  "Gull-billed Tern", "Hypocolius", "Indian Blue-Robin", "Indian Golden Oriole",
+  "Indian Paradise Flycatcher", "Indian Pitta", "Isabelline Shrike", "Brown Shrike",
+  "Isabelline Wheatear", "Kashmir Flycatcher", "Little Tern", "Northern Wheatear",
+  "Oriental Turtle-Dove", "Pacific Golden Plover", "Pallas's Fish-Eagle", "Pied Cuckoo",
+  "Red-breasted Flycatcher", "Red-flanked Bluetail", "Red-headed Bunting", "Rosy Starling",
+  "Rufous-tailed Scrub-Robin", "Sanderling", "Short-eared Owl", "Spot-winged Starling",
+  "Spotted Flycatcher", "Tytler's Leaf Warbler", "Whimbrel", "White-eyed Buzzard",
+  "White-throated Needletail", "Willow Warbler", "Wilson's Storm-Petrel",
+  "Yellow-browed Warbler", "Yellow-eyed Pigeon",
+  # new additions 2024
+  "Rusty-tailed Flycatcher", "Pied Thrush"
+)
 spec_mig <- c(get_spec_mig()$SPECIES1, get_spec_mig()$SPECIES2) %>% na.omit()
 
 
@@ -33,10 +33,12 @@ spec_mig <- c(get_spec_mig()$SPECIES1, get_spec_mig()$SPECIES2) %>% na.omit()
 
 # india data to calculate repfreq (we show repfreq in India in gifs)
 
-# get_param()
-skimmr::ebird_rel_param(date_currel = "2022-01-01") # ### for tests without server and full data ###
+# paths to latest versions of user & GA info, and sensitive species data
+load(url("https://github.com/birdcountindia/ebird-datasets/raw/main/EBD/latest_non-EBD_paths.RData"))
+ebird_rel_param()
+
 dir_prefix <- "data/EBD/" ### this will change: directly use RData from ebird-datasets/EBD/ ###
-maindatapath <- glue("{dir_prefix}ebd_IN_rel{currel_month_lab}-{currel_year}.RData")
+maindatapath <- glue("../ebird-datasets/EBD/ebd_IN_rel{currel_month_lab}-{currel_year}.RData")
 
 load(maindatapath)
 
@@ -44,9 +46,10 @@ load(maindatapath)
 # preparing data 
 data <- data %>%
   ### TEMP FILTER 
-  filter(YEAR %in% 2020:2021) %>% 
+  filter(YEAR %in% 2010:2025) %>% 
   # filter for only approved observations & species
-  filter(REVIEWED == 0 | APPROVED == 1) %>%
+  filter(REVIEWED == 0 | APPROVED == 1) %>%       
+  #Alen: Will this include reviewed and accepted obs?
   # slice by GROUP.ID to remove duplicate checklists
   distinct(GROUP.ID, COMMON.NAME, .keep_all = TRUE) %>% 
   group_by(GROUP.ID, COMMON.NAME) %>% 
@@ -66,8 +69,8 @@ data <- data %>%
 
 # we also need individual species-level global datafiles (for the points)
 
-# dir_prefix <- glue("data/EBD/{currel_year}")
-dir_prefix <- glue("data/EBD/2024")
+dir_prefix <- glue("data/EBD/{currel_year}")
+# dir_prefix <- glue("data/EBD/2024")
 # ideally, the only .txt files in this directory should be single-species data
 # country data should be RData and should be pulled from ebird-datasets/EBD/
 
@@ -84,7 +87,7 @@ preimp <- c("CATEGORY","EXOTIC.CODE","COMMON.NAME","OBSERVATION.COUNT",
 data_spec <- map_df(list.files(path = dir_prefix, pattern = ".txt"), ~{
   
   filepath <- glue("{dir_prefix}/{.x}")
-  read.ebd(path = filepath, cols_sel = preimp)
+  read.ebd(filepath, cols_sel = preimp)
   
 }) %>% 
   mutate(GROUP.ID = ifelse(is.na(GROUP.IDENTIFIER), 
