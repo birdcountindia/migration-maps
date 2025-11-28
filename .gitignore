@@ -9,4 +9,5 @@
 
 # specific files/folders
 data/01_import_data.RData
+data/01_import_data_old.RData
 data/EBD/

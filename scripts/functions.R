@@ -423,7 +423,7 @@ gg_migrate <- function(
     duration = 12,
     fps = plot_fps,
     res = plot_res,
-    width = 400, height = 300,
+    width = 600, height = 300,
     renderer = gifski_renderer ()
   )  
   
@@ -454,3 +454,4 @@ gg_migrate <- function(
   image_write(image_join(map_gif), path = filepath)
   
   }
+
