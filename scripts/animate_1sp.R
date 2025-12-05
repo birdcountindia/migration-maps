@@ -1,0 +1,151 @@
+gg_migrate <- function(
+    spec1, pos_gr, pos_im, name_col,
+    plot_min_long = NULL, plot_min_lat = NULL, 
+    plot_max_long = NULL, plot_max_lat = NULL,
+    window_days = 30,    
+    step_days = 3     
+) {
+  
+  # --- SETUP ---
+  require(tidyverse)
+  require(sf)
+  require(magick)
+  require(cowplot)
+  require(gifski)
+  require(extrafont)
+  require(tictoc)
+  require(progress)
+
+    # Settings
+  plot_res <- 100; plot_fps <- 10; plot_col <- "#5e488a"
+  
+  temp_dir <- "temp_frames"
+  if (!dir.exists(temp_dir)) dir.create(temp_dir)
+  file.remove(list.files(temp_dir, full.names = TRUE))
+  
+  # --- ASSETS 
+  info <- get_spec_photo() %>% filter(SPECIES == spec1)
+  mugshot <- image_read(paste0("data/mugshots/", info$PHOTO.FILE)) %>% 
+    image_scale("200") %>% image_border(plot_col, "2x2") %>%
+    image_annotate(info$PHOTO.CREDIT, size=18, location="+8+4", 
+                   color= name_col , font="Gill Sans")
+  
+  logo1 <- image_read("birdcountindia_logo.png") %>% image_resize("x45")  
+  logo2 <- image_read("eBird_India_Logo.png") %>% image_resize("x45")  
+  spacer <- image_blank(width = 10, height = image_info(logo1)$height, color = "none")
+  combined_logo <- image_append(c(logo1, spacer, logo2), stack = FALSE)
+  
+  title_card <- image_blank(800, 60, "none") %>%
+    image_annotate(
+      text = spec1, font = "Gill Sans", size = 30, color = plot_col, 
+      gravity = "center", weight = 1000
+    )
+  
+  # --- DATA PREP ---
+  message(paste("Preparing data for:", spec1))
+  
+  # Map Data (Calculated FIRST)
+  data_sf <- data_spec %>% filter(COMMON.NAME == spec1, YEAR > 2020) %>%
+    st_as_sf(coords = c("LONGITUDE", "LATITUDE"), crs = st_crs(india_sf)) %>% 
+    st_transform(crs = "ESRI:54030")
+
+  # --- MAP BOUNDS CALCULATION (Dynamic 3:2 Ratio) ---
+  # 1. Get Bounding Box of the projected data
+  bbox <- st_bbox(data_sf)
+  raw_xlim <- c(bbox["xmin"], bbox["xmax"])
+  raw_ylim <- c(bbox["ymin"], bbox["ymax"])
+  
+  # 2. Add 10% Padding
+  x_range <- diff(raw_xlim) * 1.2
+  y_range <- diff(raw_ylim) * 1.2
+  mid_x <- mean(raw_xlim)
+  mid_y <- mean(raw_ylim)
+  
+  # 3. Enforce 3:2 Aspect Ratio (1.5) by EXPANDING only
+  target_ratio <- 1.5 # (10.5 / 7)
+  current_ratio <- x_range / y_range
+  
+  if (current_ratio > target_ratio) {
+    # Too wide? Increase height to match
+    y_range <- x_range / target_ratio
+  } else {
+    # Too tall? Increase width to match
+    x_range <- y_range * target_ratio
+  }
+  
+  # 4. Final Limits
+  xmin <- mid_x - x_range/2
+  xmax <- mid_x + x_range/2
+  ymin <- mid_y - y_range/2
+  ymax <- mid_y + y_range/2
+  # ---------------------------------------------------------
+  
+  # Freq Data
+  tic("Smoothing frequency") 
+  raw_freq <- calc_repfreq_IN(data_IN, spec1)
+  
+  freq_smooth <- raw_freq %>%
+    filter(PERIOD == "DAY.Y") %>% rename(DAY.Y = NUMBER) %>%
+    bind_rows(mutate(., DAY.Y = DAY.Y + 365), bind_rows(mutate(., DAY.Y = DAY.Y - 365))) %>%
+    nest(data = everything()) %>%
+    mutate(model = map(data, ~ loess(REP.FREQ ~ DAY.Y, data = ., span = 0.25)),
+           pred_y = map(model, ~ predict(., newdata = data.frame(DAY.Y = 1:365)))) %>%
+    unnest(pred_y) %>%
+    mutate(DAY.Y = 1:365, REP.FREQ = ifelse(pred_y < 0, 0, pred_y), SPECIES = spec1)
+  
+  toc ()
+  
+  max_freq <- max(freq_smooth$REP.FREQ, na.rm = TRUE)
+  month_breaks <- c(1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335)
+  month_labels <- c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")
+  
+  # --- LOOP ---
+  starts <- c(seq(101, 365, step_days), seq(1, 100, step_days))
+  pb <- txtProgressBar(0, length(starts), style=3)
+  
+  for (k in seq_along(starts)) {
+    i <- starts[k]; if (k%%10==0) gc(verbose=F)
+    
+    days <- c(1:365, 1:window_days)[i:(i + window_days - 1)]
+    mid <- c(1:365, 1:window_days)[i + round(window_days/2)]
+    
+    # Map
+    p_map <- basemap + 
+      geom_sf(data=filter(data_sf, DAY.Y %in% days), col=plot_col, size=2, alpha=0.8, stroke=0) +
+      # FIX: Added expand = FALSE to force exact 3:2 crop without extra whitespace
+      coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), expand = FALSE) + 
+      theme(legend.position="none")
+    
+    # Graph 
+    p_graph <- ggplot(freq_smooth, aes(DAY.Y, REP.FREQ)) +
+      geom_line(col=plot_col, linewidth=1.5) +
+      geom_vline(xintercept=mid, linewidth=0.5) +
+      scale_x_continuous(breaks=month_breaks, labels=paste0("\n", month_labels)) +
+      scale_y_continuous(limits = c(0, max_freq*1.1),expand = expansion(mult = c(0.02, 0.02)))+
+      labs(title=paste0("Frequency in India (max. ", round(max_freq), "%)")) +
+      theme_void() +
+      theme(
+        plot.title = element_text(hjust = 0.5, size = 10, face = "plain", margin = margin(t=5, b=5)),
+        plot.background = element_rect(fill = "white", colour = "black", linewidth = 1),
+        axis.text.x = element_text(face = "plain", size = 12, color = "black", vjust=2) 
+      )
+    
+    final <- ggdraw(p_map) + draw_plot(p_graph, x=if(pos_gr=="R") 0.68 else 0.02, y=0.02, width=0.3, height=0.2)
+    ggsave(sprintf("%s/frame_%03d.png", temp_dir, k), final, width=10.5, height=7, dpi=plot_res, device="png")
+    setTxtProgressBar(pb, k)
+  }
+  close(pb)
+  
+  # --- STITCHING ---
+  message("Stitching...")
+  frames <- image_read(list.files(temp_dir, full.names=T))
+  mug_off <- if(pos_im=="L") "+20+20" else "+880+20"
+  
+  final <- frames %>%
+    image_composite(image_scale(mugshot, "150"), offset=mug_off) %>%
+    image_composite(image_scale(title_card, "800"), gravity="north") %>%
+    image_composite(image_scale(combined_logo, "x45"), offset = paste0("+", if(pos_gr == "R") 20 else 360, "+635")) %>%
+    image_animate(fps=plot_fps)
+  image_write(final, paste0("outputs/", spec1," Migration Map.gif"))
+  message("Done.")
+}
