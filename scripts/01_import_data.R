@@ -9,35 +9,32 @@ library(purrr)
 spec_mig <- c(
   "Amur Falcon", "Arctic Warbler", "Ashy Drongo", "Asian Brown Flycatcher", "Bar-headed Goose",
   "Black Baza", "Black Redstart", "Blue Rock-Thrush", "Blue-tailed Bee-eater", "Blyth's Reed Warbler",
-  "Brown-breasted Flycatcher", "Brown-headed Gull",
-  "Cattle Egret", "Gray Nightjar", "Greater Whitethroat", ### CHANGE NAME
-  "Chestnut-headed Bee-eater", "Chestnut-winged Cuckoo", "Collared Pratincole", "Oriental Pratincole",
-  "Common Crane", "Common Cuckoo", "Common Greenshank", "Common Rosefinch", "Crab-Plover",
-  "Demoiselle Crane", "Desert Wheatear", "Pied Wheatear", "Eurasian Wryneck", "European Bee-eater",
+  "Brown-breasted Flycatcher", "Brown-headed Gull","Eastern Cattle Egret","Western Cattle Egret",
+  "Gray Nightjar", "Greater Whitethroat", "Chestnut-headed Bee-eater", "Chestnut-winged Cuckoo", 
+  "Collared Pratincole", "Oriental Pratincole",  "Common Crane", "Common Cuckoo", 
+  "Common Greenshank", "Common Rosefinch", "Crab-Plover", "Demoiselle Crane", "Desert Wheatear",
+  "Pied Wheatear", "Eurasian Wryneck", "European Bee-eater",
   "European Roller", "Forest Wagtail", "Garganey", "Gray-headed Lapwing",
   "Great Cormorant", "Great White Pelican", "Green Warbler", "Greenish Warbler",
-  "Gull-billed Tern", "Hypocolius", "Indian Blue-Robin", "Indian Golden Oriole",
-  "Indian Paradise Flycatcher", "Indian Pitta", "Isabelline Shrike", "Brown Shrike",
+  "Gull-billed Tern", "Hypocolius", "Indian Blue Robin", "Indian Golden Oriole",
+  "Indian Paradise-Flycatcher", "Indian Pitta", "Isabelline Shrike", "Brown Shrike",
   "Isabelline Wheatear", "Kashmir Flycatcher", "Little Tern", "Northern Wheatear",
-  "Oriental Turtle-Dove", "Pacific Golden Plover", "Pallas's Fish-Eagle", "Pied Cuckoo",
+  "Oriental Turtle-Dove", "Pacific Golden-Plover", "Pallas's Fish-Eagle", "Pied Cuckoo",
   "Red-breasted Flycatcher", "Red-flanked Bluetail", "Red-headed Bunting", "Rosy Starling",
   "Rufous-tailed Scrub-Robin", "Sanderling", "Short-eared Owl", "Spot-winged Starling",
-  "Spotted Flycatcher", "Tytler's Leaf Warbler", "Whimbrel", "White-eyed Buzzard",
+  "Spotted Flycatcher", "Tytler's Leaf Warbler", "Eurasian Whimbrel", "White-eyed Buzzard",
   "White-throated Needletail", "Willow Warbler", "Wilson's Storm-Petrel",
-  "Yellow-browed Warbler", "Yellow-eyed Pigeon",
-  # new additions 2024
-  "Rusty-tailed Flycatcher", "Pied Thrush"
+  "Yellow-browed Warbler", "Yellow-eyed Pigeon","Rusty-tailed Flycatcher", "Pied Thrush", 
+  "Barn Swallow", "Dalmatian Pelican", "Taiga Flycatcher"
 )
 
 spec_mig <- c(get_spec_mig()$SPECIES1, get_spec_mig()$SPECIES2) %>% na.omit()
 
-
 # loading main data -----------------------------------------------------
-
 # india data to calculate repfreq (we show repfreq in India in gifs)
-
 # paths to latest versions of user & GA info, and sensitive species data
-load(url("https://github.com/birdcountindia/ebird-datasets/raw/main/EBD/latest_non-EBD_paths.RData"))
+
+load("../ebird-datasets/EBD/latest_non-EBD_paths.RData")
 ebird_rel_param()
 
 dir_prefix <- "data/EBD/" ### this will change: directly use RData from ebird-datasets/EBD/ ###
@@ -45,13 +42,22 @@ maindatapath <- glue("../ebird-datasets/EBD/ebd_IN_rel{currel_month_lab}-{currel
 
 load(maindatapath)
 
+# cols to import
+preimp <- c("COMMON.NAME","REVIEWED","APPROVED","LATITUDE","LONGITUDE",
+            "OBSERVATION.DATE","ALL.SPECIES.REPORTED","GROUP.IDENTIFIER",
+            "SAMPLING.EVENT.IDENTIFIER", "YEAR", "MONTH", "DAY.M",
+            "M.YEAR", "M.MONTH", "GROUP.ID")
+
+data_IN <- data %>% select(all_of(preimp))
+rm(data_sed, data)
+
 # preparing data 
-data <- data %>%
-  ### TEMP FILTER 
-  filter(YEAR %in% 2010:2025) %>% 
-  # filter for only approved observations & species
-  filter(REVIEWED == 0 | APPROVED == 1) %>%       
-  #Alen: Will this include reviewed and accepted obs?
+data_IN <- data_IN %>%
+  #Because all sp data is till JUN 2025 only.
+  filter(OBSERVATION.DATE >= as.Date("2020-01-01") &
+           OBSERVATION.DATE <= as.Date("2025-06-30")) %>% 
+    # filter for only approved observations & species
+  filter(REVIEWED == 0 | APPROVED == 1) %>% 
   # slice by GROUP.ID to remove duplicate checklists
   distinct(GROUP.ID, COMMON.NAME, .keep_all = TRUE) %>% 
   group_by(GROUP.ID, COMMON.NAME) %>% 
@@ -72,19 +78,12 @@ data <- data %>%
 # we also need individual species-level global datafiles (for the points)
 
 dir_prefix <- glue("data/EBD/{currel_year}")
-# dir_prefix <- glue("data/EBD/2024")
 # ideally, the only .txt files in this directory should be single-species data
 # country data should be RData and should be pulled from ebird-datasets/EBD/
 
-# cols to import
-preimp <- c("CATEGORY","EXOTIC.CODE","COMMON.NAME","OBSERVATION.COUNT",
-            "LOCALITY.ID","LOCALITY.TYPE","REVIEWED","APPROVED","LAST.EDITED.DATE",
-            "STATE","STATE.CODE","COUNTY","COUNTY.CODE",
-            "LATITUDE","LONGITUDE","OBSERVATION.DATE","TIME.OBSERVATIONS.STARTED","OBSERVER.ID",
-            "PROTOCOL.NAME","DURATION.MINUTES","EFFORT.DISTANCE.KM","LOCALITY","BREEDING.CODE",
-            "NUMBER.OBSERVERS","ALL.SPECIES.REPORTED","GROUP.IDENTIFIER","SAMPLING.EVENT.IDENTIFIER",
-            "CHECKLIST.COMMENTS","SPECIES.COMMENTS", "HAS.MEDIA")
-
+preimp <- c("COMMON.NAME","REVIEWED","APPROVED","LATITUDE","LONGITUDE",
+            "OBSERVATION.DATE","ALL.SPECIES.REPORTED", "EXOTIC.CODE","GROUP.IDENTIFIER",
+            "SAMPLING.EVENT.IDENTIFIER")
 
 data_spec <- map_df(list.files(path = dir_prefix, pattern = ".txt"), ~{
   
@@ -92,6 +91,7 @@ data_spec <- map_df(list.files(path = dir_prefix, pattern = ".txt"), ~{
   read.ebd(filepath, cols_sel = preimp)
   
 }) %>% 
+  filter(!EXOTIC.CODE %in% c("P", "X")) %>%   
   mutate(GROUP.ID = ifelse(is.na(GROUP.IDENTIFIER), 
                            SAMPLING.EVENT.IDENTIFIER,
                            GROUP.IDENTIFIER), 
@@ -99,7 +99,10 @@ data_spec <- map_df(list.files(path = dir_prefix, pattern = ".txt"), ~{
          YEAR = year(OBSERVATION.DATE), 
          MONTH = month(OBSERVATION.DATE),
          DAY.M = day(OBSERVATION.DATE)) %>% 
-  # migratory year and month information
+  #Because 6 sps have data is till OCT 2025 only.
+  filter(OBSERVATION.DATE >= as.Date("2020-01-01") &
+           OBSERVATION.DATE <= as.Date("2025-06-30")) %>%   
+    # migratory year and month information
   mutate(M.YEAR = if_else(MONTH > 5, YEAR, YEAR-1), # from June to May
          M.MONTH = if_else(MONTH > 5, MONTH-5, 12-(5-MONTH))) %>% 
   mutate(DAY.Y = yday(OBSERVATION.DATE),
@@ -124,7 +127,7 @@ india_buff_sf <- india_buff_sf %>% mutate(INLAND = 1)
 
 
 # join grid and coastal boundary info 
-temp = data %>%
+temp = data_IN %>%
   distinct(GROUP.ID, LONGITUDE, LATITUDE) %>% 
   group_by(GROUP.ID) %>% 
   slice_sample(n = 1) %>% 
@@ -142,15 +145,11 @@ temp = temp %>%
   slice_sample(n = 1) %>% 
   ungroup()
 
-data = data %>% 
+data_IN = data_IN %>% 
   left_join(temp, by = "GROUP.ID")
-
 
 # saving data for downstream use ----------------------------------------------------
 
 # renaming here; input RData will always have "data" so cannot change that
-data_IN <- data
-rm(data)
-
 save(data_IN, data_spec, 
      file = "data/01_import_data.RData")
