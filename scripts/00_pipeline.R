@@ -19,8 +19,8 @@ basemap <- gg_world()
 
 # species ------------------------------------------------
 sp_ls <- read_xlsx("data/species_mapping.xlsx", sheet = 1)
-#sp_ls <- sp_ls %>% slice(53)
-#sp_ls <- sp_ls %>% slice(1:6, 16)
+#sp_ls <- sp_ls %>% slice(13, 31)
+
 
 #execution------------------------------------------------ 
 purrr::walk(seq_len(nrow(sp_ls)), function(i) {

@@ -47,12 +47,12 @@ gg_migrate <- function(
     st_transform(crs = "ESRI:54030")
 
   # --- MAP BOUNDS CALCULATION (Dynamic 3:2 Ratio) ---
-  # Use this and these variables if you want to set 
-  # the boundaries automatically
-  #bbox <- st_bbox(data_sf)
-  #raw_xlim <- c(bbox["xmin"], bbox["xmax"])
-  #raw_ylim <- c(bbox["ymin"], bbox["ymax"])
- 
+
+  if (is.na(min_long)){
+  bbox <- st_bbox(data_sf)
+  raw_xlim <- c(bbox["xmin"], bbox["xmax"])
+  raw_ylim <- c(bbox["ymin"], bbox["ymax"])
+  } else {
    bounds_sf <- data.frame(
     lon = c(min_long, max_long),
     lat = c(min_lat, max_lat)
@@ -62,6 +62,7 @@ gg_migrate <- function(
   bounds_coords <- st_coordinates(bounds_sf)
   raw_xlim <- range(bounds_coords[,"X"])
   raw_ylim <- range(bounds_coords[,"Y"])
+  }
   
   # 2. Add 10% Padding
   x_range <- diff(raw_xlim) * 1.2

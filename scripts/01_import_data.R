@@ -113,6 +113,37 @@ data_spec <- map_df(list.files(path = dir_prefix, pattern = ".txt"), ~{
                             MONTH %in% c(12, 1:2) ~ "Winter",
                             MONTH %in% 3:4 ~ "Spring"))
 
+# Some data has to be filtered out to remove exotic and 
+# vagrant records so that the maps are not skewed.
+
+data_spec <- data_spec |>
+  filter(!(COMMON.NAME == "Asian Brown Flycatcher" & LONGITUDE > 140)) |> 
+  filter(!(COMMON.NAME == "Bar-headed Goose" & LONGITUDE < 60)) |> 
+  filter(!(COMMON.NAME == "Barn Swallow" & LONGITUDE < -154)) |> 
+  filter(!(COMMON.NAME == "Blue Rock-Thrush" & LONGITUDE < -25)) |> 
+  filter(!(COMMON.NAME == "Blue-tailed Bee-eater" & LONGITUDE > 140)) |> 
+  filter(!(COMMON.NAME == "Blyth's Reed Warbler" & LONGITUDE < -25)) |> 
+  filter(!(COMMON.NAME == "Common Crane" & LONGITUDE < -25)) |> 
+  filter(!(COMMON.NAME == "Common Cuckoo" & LONGITUDE < -25)) |> 
+  filter(!(COMMON.NAME == "Common Greenshank" & LONGITUDE < -30)) |> 
+  filter(!(COMMON.NAME == "Common Rosefinch" & LONGITUDE < -30)) |> 
+  filter(!(COMMON.NAME == "Demoiselle Crane" & LONGITUDE < 15)) |> 
+  filter(!(COMMON.NAME == "Western Cattle-Egret" & LONGITUDE < -154)) |> 
+  filter(!(COMMON.NAME == "Eurasian Whimbrel" & LONGITUDE < -30)) |> 
+  filter(!(COMMON.NAME == "Garganey" & LONGITUDE < -30)) |> 
+  filter(!(COMMON.NAME == "Gray-headed Lapwing" & LONGITUDE < 55)) |> 
+  filter(!(COMMON.NAME == "Great Cormorant" & LONGITUDE < -125)) |> 
+  filter(!(COMMON.NAME == "Little Tern" & LONGITUDE < -30)) |> 
+  filter(!(COMMON.NAME == "Oriental Pratincole" & LONGITUDE < 35)) |> 
+  filter(!(COMMON.NAME == "Oriental Turtle-Dove" & LONGITUDE < -30)) |> 
+  filter(!(COMMON.NAME == "Red-breasted Flycatcher" & LONGITUDE < -30)) |>
+  filter(!(COMMON.NAME == "Taiga Flycatcher" & LONGITUDE < -30)) |>
+  filter(!(COMMON.NAME == "Red-flanked Bluetail" & LONGITUDE < -30)) |> 
+  filter(!(COMMON.NAME == "Red-headed Bunting" & LONGITUDE < 43)) |> 
+  filter(!(COMMON.NAME == "Willow Warbler" & LONGITUDE < -30)) |> 
+  filter(!(COMMON.NAME == "Wilson's Storm-Petrel" & LONGITUDE < -154)) |> 
+  filter(!(COMMON.NAME == "Yellow-browed Warbler" & LONGITUDE < -30))
+  
 
 # joining spatial data --------------------------------------------------------------
 

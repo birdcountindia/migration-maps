@@ -45,9 +45,9 @@ gg_migrate <- function(
   combined_logo <- image_append(c(logo1, spacer2, logo2), stack = FALSE)   
   
   t1 <- image_blank(800, 35, "none") %>%
-    image_annotate(text = paste(spec1, " ") , font = "Gill Sans", size = 30, color = plot_col1, gravity = "center", weight = 900) 
+    image_annotate(text = paste(spec1) , font = "Gill Sans", size = 30, color = plot_col1, gravity = "center", weight = 900) 
   t2 <- image_blank(800, 35, "none") %>%
-    image_annotate(text = paste0(" & ", spec2), font = "Gill Sans", size = 30, color = plot_col2, gravity = "center", weight = 900) 
+    image_annotate(text = paste0(spec2), font = "Gill Sans", size = 30, color = plot_col2, gravity = "center", weight = 900) 
   
   title_card <- image_append(c(t1, t2), stack = TRUE)
   title_card
@@ -61,21 +61,22 @@ gg_migrate <- function(
     st_transform(crs = "ESRI:54030")
   
 # --- MAP BOUNDS CALCULATION (Dynamic 3:2 Ratio) ---
-  # Use this and these variables if you want to set 
-  # the boundaries automatically
-  #bbox <- st_bbox(data_sf)
-  #raw_xlim <- c(bbox["xmin"], bbox["xmax"])
-  #raw_ylim <- c(bbox["ymin"], bbox["ymax"])
   
-  bounds_sf <- data.frame(
-    lon = c(min_long, max_long),
-    lat = c(min_lat, max_lat)
-  ) %>% 
-    st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
-    st_transform(crs = "ESRI:54030")
-  bounds_coords <- st_coordinates(bounds_sf)
-  raw_xlim <- range(bounds_coords[,"X"])
-  raw_ylim <- range(bounds_coords[,"Y"])
+  if (is.na(min_long)){
+    bbox <- st_bbox(data_sf)
+    raw_xlim <- c(bbox["xmin"], bbox["xmax"])
+    raw_ylim <- c(bbox["ymin"], bbox["ymax"])
+  } else {
+    bounds_sf <- data.frame(
+      lon = c(min_long, max_long),
+      lat = c(min_lat, max_lat)
+    ) %>% 
+      st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
+      st_transform(crs = "ESRI:54030")
+    bounds_coords <- st_coordinates(bounds_sf)
+    raw_xlim <- range(bounds_coords[,"X"])
+    raw_ylim <- range(bounds_coords[,"Y"])
+  }
   
   # 2. Add 10% Padding
   x_range <- diff(raw_xlim) * 1.2
@@ -138,7 +139,7 @@ gg_migrate <- function(
     # Map
     p_map <- basemap + 
       geom_sf(data = filter(data_sf, DAY.Y %in% days), 
-        aes(color = COMMON.NAME), size = dot_size, alpha = 0.8, stroke = 0) +
+        aes(color = COMMON.NAME), size = dot_size, alpha = 0.5, stroke = 0) +
         scale_color_manual(values = c(plot_col1, plot_col2)) + 
       coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), expand = FALSE) + 
       theme(legend.position = "none")
