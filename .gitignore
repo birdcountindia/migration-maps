@@ -1,6 +1,7 @@
 # R files
 .Rhistory
 .Rproj.user
+.RDataTmp
 
 
 # data file types
@@ -9,6 +10,13 @@
 
 # specific files/folders
 data/01_import_data.RData
+data/01_IN_data.RData
+data/spec_data_batch.RData
+
 data/EBD/
+data/mugshots/
 outputs/
 temp_frames/
+
+scripts/animate_1sp_trial.R
+scripts/animate_2sp_trial.R

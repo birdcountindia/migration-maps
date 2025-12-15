@@ -1,6 +1,6 @@
 gg_migrate <- function(
     spec1, spec2, pos_gr, pos_im, name_col, dot_size, 
-    SHOW.FREQ, min_lat, min_long, max_lat, max_long,
+    SHOW.FREQ, min_lat, min_long, max_lat, max_long, print,
     window_days = 30, step_days = 3     
 ){
   
@@ -43,15 +43,36 @@ gg_migrate <- function(
   logo2 <- image_read("eBird_India_Logo.png") %>% image_resize("x45")  
   spacer2 <- image_blank(width = 10, height = image_info(logo1)$height, color = "none")
   combined_logo <- image_append(c(logo1, spacer2, logo2), stack = FALSE)   
+ 
+#Namecard 
+  create_txt <- function(txt, color) {
+    image_blank(1500, 100, "none") %>%
+      image_annotate(text = txt, font = "Gill Sans", size = 50, color = color, gravity = "center", weight = 900) %>%
+      image_trim()
+  }
+
+  t1 <- create_txt(spec1, plot_col1)
+  t2 <- create_txt(paste("&", spec2), plot_col2)
   
-  t1 <- image_blank(800, 35, "none") %>%
-    image_annotate(text = paste(spec1) , font = "Gill Sans", size = 30, color = plot_col1, gravity = "center", weight = 900) 
-  t2 <- image_blank(800, 35, "none") %>%
-    image_annotate(text = paste0(spec2), font = "Gill Sans", size = 30, color = plot_col2, gravity = "center", weight = 900) 
+  w1 <- image_info(t1)$width
+  w2 <- image_info(t2)$width
+  max_w <- max(w1, w2)
   
-  title_card <- image_append(c(t1, t2), stack = TRUE)
-  title_card
-  # --- DATA PREP ---
+  t1 <- image_extent(t1, paste0(max_w, "x", image_info(t1)$height), color = "none", gravity = "center")
+  t2 <- image_extent(t2, paste0(max_w, "x", image_info(t2)$height), color = "none", gravity = "center")
+  
+  spacer_title <- image_blank(width = max_w, height = 10, color = "none")
+  temp_title <- image_append(c(t1, spacer_title, t2), stack = TRUE)
+  info_t <- image_info(temp_title)
+  pad_w <- round(info_t$width * 0.05)
+  pad_h <- round(info_t$height * 0.15)
+  
+  title_card <- temp_title %>%
+    image_background("#e5d8ca") %>%          
+    image_border("#e5d8ca", paste0(pad_w, "x", pad_h)) %>% 
+    image_border("black", "1x1")                      
+  
+# --- DATA PREP ---
   message(paste("Preparing data for:", spec1, "&", spec2))
   
   # Map Data (Calculated FIRST)
@@ -66,21 +87,23 @@ gg_migrate <- function(
     bbox <- st_bbox(data_sf)
     raw_xlim <- c(bbox["xmin"], bbox["xmax"])
     raw_ylim <- c(bbox["ymin"], bbox["ymax"])
+    
   } else {
     bounds_sf <- data.frame(
       lon = c(min_long, max_long),
       lat = c(min_lat, max_lat)
     ) %>% 
-      st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
-      st_transform(crs = "ESRI:54030")
+      st_as_sf(coords = c("lon", "lat"), crs = "ESRI:54030")
+    
     bounds_coords <- st_coordinates(bounds_sf)
     raw_xlim <- range(bounds_coords[,"X"])
     raw_ylim <- range(bounds_coords[,"Y"])
   }
   
-  # 2. Add 10% Padding
+  # Add 10% Padding
   x_range <- diff(raw_xlim) * 1.2
   y_range <- diff(raw_ylim) * 1.2
+  
   mid_x <- mean(raw_xlim)
   mid_y <- mean(raw_ylim)
   
@@ -121,25 +144,25 @@ gg_migrate <- function(
     ungroup()
   
   toc ()
-
   max_freq <- max(freq_smooth$REP.FREQ, na.rm = TRUE)
+  max_freq_rounded <- paste(round(max_freq))
+  max_freq_rounded[max_freq_rounded == "0"] = "<1"
   month_breaks <- c(1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335)
   month_labels <- c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")  
+  
   # --- LOOP ---
   starts <- c(seq(101, 365, step_days), seq(1, 100, step_days))
   pb <- txtProgressBar(0, length(starts), style=3)
-  
-  
-  for (k in seq_along(starts)) {
+  for (k in seq_along(starts)) { 
     i <- starts[k]; if (k%%10==0) gc(verbose=F)
     
     days <- c(1:365, 1:window_days)[i:(i + window_days - 1)]
     mid <- c(1:365, 1:window_days)[i + round(window_days/2)]
-    
+   
     # Map
     p_map <- basemap + 
       geom_sf(data = filter(data_sf, DAY.Y %in% days), 
-        aes(color = COMMON.NAME), size = dot_size, alpha = 0.5, stroke = 0) +
+        aes(color = COMMON.NAME), size = dot_size, alpha = 0.6, stroke = 0) +
         scale_color_manual(values = c(plot_col1, plot_col2)) + 
       coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), expand = FALSE) + 
       theme(legend.position = "none")
@@ -151,7 +174,7 @@ gg_migrate <- function(
       geom_vline(xintercept=mid,color = "black", linewidth=0.5) +
       scale_x_continuous(breaks=month_breaks, labels=paste0("\n", month_labels)) +
       scale_y_continuous(limits = c(0, max_freq*1.1),expand = expansion(mult = c(0.02, 0.02)))+
-      labs(title=paste0("Frequency in India (max. ", round(max_freq), "%)")) +
+      labs(title=paste0("Frequency in India (max. ",max_freq_rounded, "%)")) +
       theme_void() +
       theme(
         plot.title = element_text(hjust = 0.5, size = 10, face = "plain", margin = margin(t=5, b=5)),
@@ -167,9 +190,9 @@ gg_migrate <- function(
       label <- format(as.Date(mid-1, origin="2023-01-01"), "%B")
       ggdraw(p_map)+
         annotate("text", 
-                 x = if (pos_gr == "R") 0.8 else 0.02, y = 0.05, 
+                 x = if (pos_gr == "R") 0.98 else 0.02, y = 0.05, 
                  label = label,
-                 size = 8, fontface = "bold", color = "black", hjust = 0.5)}
+                 size = 8, fontface = "bold", color = "black", hjust = 1)}
     
     ggsave(sprintf("%s/frame_%03d.png", temp_dir, k), final, width=10.5, height=7, dpi=plot_res, device="png")
     setTxtProgressBar(pb, k)
@@ -183,10 +206,10 @@ gg_migrate <- function(
   
   final <- frames %>%
     image_composite(image_scale(mugshot, "150"), offset=mug_off) %>%
-    image_composite(image_scale(title_card, "800"), gravity="north") %>%
+    image_composite(image_scale(title_card, "x70"), gravity="north", offset = "+0+15") %>%
     image_composite(image_scale(combined_logo, "x45"), offset = paste0("+", if(pos_gr == "R") 20 else 360, "+635")) %>%
     image_animate(fps=plot_fps)
-  image_write(final, paste0("outputs/", spec1,"&", spec2, "Migration Map.gif"))
+  image_write(final, paste0("outputs/", spec1,"&", spec2, "Migration Map ",print,".gif"))
   unlink(temp_dir, recursive=T)
-  message("Done.")
+  message("----- Done-----")
 }
